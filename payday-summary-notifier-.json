@@ -1,0 +1,1197 @@
+{
+  "updatedAt": "2026-04-07T14:59:43.366Z",
+  "createdAt": "2026-04-03T18:35:21.475Z",
+  "id": "mzBSnyoUZgatEhJ9",
+  "name": "Payday Summary Notifier",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        512
+      ],
+      "id": "4ac9a25d-1026-4865-87af-23436b5f90cd",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ae9d4e60-9a42-4da1-a03f-9f780bf75aa2",
+              "leftValue": "={{ $json.completedAt }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        512
+      ],
+      "id": "c3e2d7f8-f145-481f-999b-48ed90b4794b",
+      "name": "filter_incomplete_chores"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "kid",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.kidId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        560
+      ],
+      "id": "3860f9dd-4280-478a-aaa5-3e690c07e873",
+      "name": "get_kids",
+      "credentials": {
+        "supabaseApi": {
+          "id": "GBvkr2itkiJQlc9g",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1128520915232227328",
+          "mode": "id"
+        },
+        "sendTo": "user",
+        "userId": {
+          "__rl": true,
+          "value": "190647064152113152",
+          "mode": "id"
+        },
+        "content": "={{ $input.item.json.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        368
+      ],
+      "id": "924f0032-721c-4e4d-8fd8-1036966998ad",
+      "name": "Send a message",
+      "webhookId": "814dbf65-0a3f-49d6-8c86-a5deb142ad53",
+      "executeOnce": true,
+      "credentials": {
+        "discordBotApi": {
+          "id": "23p8t8drWw18Fp4s",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "choreassignment",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "dueDate",
+              "condition": "lte",
+              "keyValue": "={{ $input.item.json.timestamp }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        512
+      ],
+      "id": "ef5c885b-d1da-4f43-bf2e-b187efc2c69f",
+      "name": "get_assignments",
+      "credentials": {
+        "supabaseApi": {
+          "id": "GBvkr2itkiJQlc9g",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aggregatedData = $input.all().reduce((acc, chore) => {\n  const kidId = chore.json.kidId;\n\n  if (!acc[kidId]) acc[kidId] = [];\n  acc[kidId].push(chore.json)\n  return acc\n}, {})\n\nconst results = Object.entries(aggregatedData).map(([kidId, chores]) => {\n  //const [id, chores] = x\n  return {\"json\": {kidId, chores}}\n})\nreturn results"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        512
+      ],
+      "id": "1153c1f1-3ac6-4cd8-954a-517f93e1eb19",
+      "name": "aggregate_chores_by_kidId"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "choretemplate",
+        "returnAll": true,
+        "filterType": "none"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        368
+      ],
+      "id": "d5797bde-0af6-4a43-bca1-417421c3a2fb",
+      "name": "get_all_chore_templates",
+      "credentials": {
+        "supabaseApi": {
+          "id": "GBvkr2itkiJQlc9g",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "Used to for gathering the chore names, to be used for message template"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        896,
+        512
+      ],
+      "id": "b4b27a51-2993-49df-ba8a-d7b0e88973fb",
+      "name": "loop_kids"
+    },
+    {
+      "parameters": {
+        "jsCode": "const header = `# Here ${$input.all().length > 1 ? \"Are Your Children's\" : \"Is your Kid's\"} Weekly Chore Summary :tada:`\nvar kidsChores = ``\n\n// iterate over each child\nfor (const item of $('loop_kids').all()) {\n  console.log($(\"aggregate_chores_by_kidId\").all())\n  // get list of completed chores for current child\n  const chores = $(\"aggregate_chores_by_kidId\").all().filter(x => {\n    return x.json.kidId === item.json.id\n  })\n  console.log(\"current list of chores \", chores)\n  // init starting value for amount earned for current child\n  var totalVal = 0\n  \n  const formattedChores = `\n## ${item.json.name}:\n${chores[0]?.json.chores.map(x => {\n  // add amount earned for current chore to the total\n  totalVal = totalVal + ($input.all().find(i => i.json.id === x.choreId))?.json?.value\n\n  // create string for message\n  return '- ' + ($input.all().find(i => i.json.id === x.choreId)?.json.name) + '\\n' +\n    '  - ' + 'Value: ' + $input.all().find(i => i.json.id === x.choreId)?.json.value + '\\n' + \n    '  - ' + 'Due Date: ' + x.dueDate.split('T')[0]\n}).join('\\n')}\n  ${'\\n' + 'Total amount earned this week: ' + '**' + '$' + totalVal.toFixed(2) + '**' + ' :moneybag:'}\n  `\n  \n  console.log(formattedChores)\n  // append section for main message\n  kidsChores = kidsChores + formattedChores\n  continue\n}\nconsole.log(kidsChores)\nconst message = header + '\\n' + kidsChores\n\nreturn {\"json\": {\"message\": message}}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        368
+      ],
+      "id": "e513b92b-b064-44d2-8c2f-e7dde0cbf03b",
+      "name": "format_message"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "get_assignments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filter_incomplete_chores": {
+      "main": [
+        [
+          {
+            "node": "aggregate_chores_by_kidId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_kids": {
+      "main": [
+        [
+          {
+            "node": "loop_kids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "get_assignments": {
+      "main": [
+        [
+          {
+            "node": "filter_incomplete_chores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "aggregate_chores_by_kidId": {
+      "main": [
+        [
+          {
+            "node": "loop_kids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_all_chore_templates": {
+      "main": [
+        [
+          {
+            "node": "format_message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "loop_kids": {
+      "main": [
+        [
+          {
+            "node": "get_all_chore_templates",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get_kids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "format_message": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "get_all_chore_templates": [
+      {
+        "json": {
+          "id": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "name": "Daily room tidy",
+          "description": "- make bed\n- make sure no clutter on the follor",
+          "value": 0.5,
+          "frequency": "daily",
+          "dueDayOfWeek": 1,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-04-02T17:03:25.405264+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "name": "Make Bed",
+          "description": "Make your bed every morning before school",
+          "value": 0.25,
+          "frequency": "daily",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "87f82b1d-0540-43ff-9088-348345715f49",
+          "name": "Do the Dishes",
+          "description": "Wash and put away all dishes after dinner",
+          "value": 0.5,
+          "frequency": "daily",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "8f5f3737-15f5-4056-81c9-946d54417529",
+          "name": "Take Out Trash",
+          "description": "Take trash bags to the curb",
+          "value": 1,
+          "frequency": "weekly",
+          "dueDayOfWeek": 3,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "e8086d87-a370-4f52-962f-429efd61f4d3",
+          "name": "Vacuum Living Room",
+          "description": "Vacuum the living room and hallway",
+          "value": 1.5,
+          "frequency": "weekly",
+          "dueDayOfWeek": 6,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "b01102e9-5ed8-4540-b4e0-0f68b607b081",
+          "name": "Clean Bathroom",
+          "description": "Scrub the sink and wipe down the toilet",
+          "value": 2,
+          "frequency": "biweekly",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": 14,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "name": "Feed Pets",
+          "description": "Fill food and water bowls for the pets",
+          "value": 0.25,
+          "frequency": "daily",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "f4e8c51e-f1e5-42fb-a095-12403a180711",
+          "name": "Do Laundry",
+          "description": "Wash fold and put away one load of laundry",
+          "value": 1,
+          "frequency": "weekly",
+          "dueDayOfWeek": 5,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "name": "Daily room tidy",
+          "description": "- make bed\n- make sure no clutter on the follor",
+          "value": 0.5,
+          "frequency": "daily",
+          "dueDayOfWeek": 1,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-04-02T17:03:25.405264+00:00"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "name": "Make Bed",
+          "description": "Make your bed every morning before school",
+          "value": 0.25,
+          "frequency": "daily",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "87f82b1d-0540-43ff-9088-348345715f49",
+          "name": "Do the Dishes",
+          "description": "Wash and put away all dishes after dinner",
+          "value": 0.5,
+          "frequency": "daily",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "8f5f3737-15f5-4056-81c9-946d54417529",
+          "name": "Take Out Trash",
+          "description": "Take trash bags to the curb",
+          "value": 1,
+          "frequency": "weekly",
+          "dueDayOfWeek": 3,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "e8086d87-a370-4f52-962f-429efd61f4d3",
+          "name": "Vacuum Living Room",
+          "description": "Vacuum the living room and hallway",
+          "value": 1.5,
+          "frequency": "weekly",
+          "dueDayOfWeek": 6,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "b01102e9-5ed8-4540-b4e0-0f68b607b081",
+          "name": "Clean Bathroom",
+          "description": "Scrub the sink and wipe down the toilet",
+          "value": 2,
+          "frequency": "biweekly",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": 14,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "name": "Feed Pets",
+          "description": "Fill food and water bowls for the pets",
+          "value": 0.25,
+          "frequency": "daily",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "f4e8c51e-f1e5-42fb-a095-12403a180711",
+          "name": "Do Laundry",
+          "description": "Wash fold and put away one load of laundry",
+          "value": 1,
+          "frequency": "weekly",
+          "dueDayOfWeek": 5,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      }
+    ],
+    "get_assignments": [
+      {
+        "json": {
+          "id": "d381486d-4524-4f71-b359-6e0ec0de3af7",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-30T00:00:00+00:00",
+          "completedAt": "2026-03-30T00:00:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-02T17:26:48.911967+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "322f125e-a060-4c7d-ab63-bbf1cfe5cc20",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-31T01:00:18+00:00",
+          "completedAt": "2026-03-30T18:21:38+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-02T18:21:44.492727+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "7c44dda2-b19e-44e5-ab49-f7338bde9075",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-31T01:00:18+00:00",
+          "completedAt": "2026-03-31T18:21:38+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-02T18:29:12.635798+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "c150605f-e7c5-4984-8333-2ecad0e532e7",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-01T01:00:18+00:00",
+          "completedAt": "2026-04-01T18:10:38+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-02T18:29:12.635798+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "8089ded7-7c9d-4144-8cfe-1efd8349b0fa",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-30T23:59:59+00:00",
+          "completedAt": "2026-03-30T08:15:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "6ec11b51-3f95-4e2b-95a8-89678804c6e9",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-31T23:59:59+00:00",
+          "completedAt": "2026-03-31T07:45:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "139f7baa-d88c-4982-9ea2-b25bf25a5a2c",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-30T23:59:59+00:00",
+          "completedAt": "2026-03-30T19:30:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "4fcfb1fa-197e-4363-818a-4f97b2a2d24d",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-30T23:59:59+00:00",
+          "completedAt": "2026-03-30T09:00:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "7df9e854-f27b-4aa9-9dd8-507242cc9ff0",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-31T23:59:59+00:00",
+          "completedAt": "2026-03-31T08:20:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "ef4fefe7-33d3-4a0a-9f7c-a7b72ff4e571",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-01T23:59:59+00:00",
+          "completedAt": "2026-04-01T08:05:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "485d943a-001c-474d-8c46-9cd39a4caf1a",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-30T23:59:59+00:00",
+          "completedAt": "2026-03-30T07:30:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "6eeb2855-2ee4-479e-b94e-1b47d096d56f",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-31T23:59:59+00:00",
+          "completedAt": "2026-03-31T07:55:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "c1af0e0f-71ea-476b-b93b-dc9753bd70a1",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-31T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "d1bea8c5-244d-48a5-9093-86760cb676b2",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-02T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "33a0fdfc-9237-4f7d-b162-922bb3f1895d",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-01T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "390851e4-661e-4082-bc08-dafdf7fac7a3",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-02T00:00:00+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-04-02T17:21:11.421366+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "67aadfb8-193f-4cfb-aa81-4f7bea17bcc0",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-01T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "7551a225-7246-4ce3-8209-5b78b9588b21",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-02T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "995c01dc-248d-40f0-a23a-d8d0a55e553c",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "8f5f3737-15f5-4056-81c9-946d54417529",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-01T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "8f550661-1794-4daf-9177-2b5c3c4ea5cf",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-03T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "ff7252aa-300b-44f9-b3fe-8d068f28dc40",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-04T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "d39e7d45-3414-4842-a3b0-7eb56e1c7743",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-05T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "03030985-56a0-4365-abf1-07f846358040",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-03T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "05469141-77da-4ad1-a3f0-674e4ed0c3b1",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-02T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "20b6e951-3bde-4c7a-a08a-099c46b4eda4",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-01T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "32f3be9a-784a-46b8-b1f6-a08d5340aaf7",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-02T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "9ad689ef-18d9-4a73-b4e4-10039e243961",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-04T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "5bc07ef7-8d20-4e6f-b397-23e533732bb6",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-05T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "fc302f4e-622f-4010-8a52-fff5bb61338a",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "e8086d87-a370-4f52-962f-429efd61f4d3",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-04T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "ba370d34-bf7a-4a57-8f2d-9f8e875fa4f8",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-03T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "801beb57-fcfb-419c-8c36-dad54fd3d028",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-02T00:00:00+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-04-02T18:30:34.055401+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "d4754588-b6aa-4084-b20c-bb2295c89639",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-04T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "ad13a253-db21-44cd-ae14-94d5c5d496a8",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-03-23",
+          "dueDate": "2026-03-24T00:00:00+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-04-02T20:04:57.809603+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "76137de0-8ef6-4531-a9ea-5bf24dd47f59",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-05T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "6374ac7a-a35d-4767-9716-f1a4a229ee65",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-03T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "1dab77f7-41cd-478c-b7fb-e670df9ace3a",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-04T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "9f54275d-7c6e-4474-941e-a50f4f01c998",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-05T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "0b69e6a1-48cf-4020-a267-520d546c0296",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "b01102e9-5ed8-4540-b4e0-0f68b607b081",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-05T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "98ff031a-7456-46b0-b6b3-0eac42364d94",
+          "kidId": "fbb7c3d3-ade6-4322-861c-60843372e626",
+          "choreId": "f4e8c51e-f1e5-42fb-a095-12403a180711",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-03T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "a2bbe22a-597c-4980-9574-c05e66da3b0e",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-04-03T18:35:21.477Z",
+      "createdAt": "2026-04-03T18:35:21.477Z",
+      "role": "workflow:owner",
+      "workflowId": "mzBSnyoUZgatEhJ9",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
