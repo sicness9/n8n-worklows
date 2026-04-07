@@ -1,0 +1,93 @@
+{
+  "updatedAt": "2026-04-07T16:09:12.201Z",
+  "createdAt": "2026-04-07T15:11:24.171Z",
+  "id": "BNy3FIkGRIiSxmUT",
+  "name": "Assignment Generator",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/generate-assignments",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "37de88ba-f386-4efb-a3d0-e2b8cf262e0f",
+      "name": "Webhook",
+      "webhookId": "1b5a4c32-4b3a-4ba5-a4d9-d690dddee468"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "choreassignment",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "weekStart",
+              "condition": "eq",
+              "keyValue": "={{ new Date() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ddc7c0bb-13f7-4a80-8edd-f559cb30d9db",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "GBvkr2itkiJQlc9g",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "0d80c477-64ff-4d86-b1cc-75b0db4d5170",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-04-07T15:11:24.174Z",
+      "createdAt": "2026-04-07T15:11:24.174Z",
+      "role": "workflow:owner",
+      "workflowId": "BNy3FIkGRIiSxmUT",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
