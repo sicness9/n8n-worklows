@@ -1,0 +1,101 @@
+{
+  "updatedAt": "2026-04-09T15:39:24.844Z",
+  "createdAt": "2026-04-09T15:29:15.111Z",
+  "id": "AzKQZoNEH5JT6mML",
+  "name": "Mark Chore Complete",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "complete-assignment",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4ebf93f3-5122-4715-8ebc-0b445f088dce",
+      "name": "Webhook",
+      "webhookId": "b58d526e-9be1-45cb-b453-b774fcfdc1fe"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "ChoreAssignment_test",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.assignmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "completedAt",
+              "fieldValue": "={{ $json.body.completed === true ? $now : null }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "68cdbf6b-0b9d-4a59-829f-eb4413bb9fe5",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "GBvkr2itkiJQlc9g",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "a97996bd-5f60-443c-bc34-f2308a60aacc",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-04-09T15:29:15.115Z",
+      "createdAt": "2026-04-09T15:29:15.115Z",
+      "role": "workflow:owner",
+      "workflowId": "AzKQZoNEH5JT6mML",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
