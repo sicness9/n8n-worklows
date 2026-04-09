@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-07T16:09:12.201Z",
+  "updatedAt": "2026-04-09T14:52:54.984Z",
   "createdAt": "2026-04-07T15:11:24.171Z",
   "id": "BNy3FIkGRIiSxmUT",
   "name": "Assignment Generator",
@@ -11,13 +11,14 @@
         "httpMethod": "POST",
         "path": "/generate-assignments",
         "responseMode": "lastNode",
+        "responseData": "allEntries",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
         0,
-        0
+        -112
       ],
       "id": "37de88ba-f386-4efb-a3d0-e2b8cf262e0f",
       "name": "Webhook",
@@ -25,15 +26,50 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5d533c54-156c-43e8-a217-91b96b7ab484",
+              "leftValue": "={{ $json.weekStart }}",
+              "rightValue": "={{ \n$today.startOf('week')\n}}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "afterOrEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        -112
+      ],
+      "id": "e591d898-8d2f-4c07-99ae-d9dc1c9905e4",
+      "name": "check_if_assignments_exist"
+    },
+    {
+      "parameters": {
         "operation": "getAll",
-        "tableId": "choreassignment",
+        "tableId": "ChoreAssignment",
         "returnAll": true,
+        "matchType": "allFilters",
         "filters": {
           "conditions": [
             {
-              "keyName": "weekStart",
+              "keyName": "kidId",
               "condition": "eq",
-              "keyValue": "={{ new Date() }}"
+              "keyValue": "={{ $json.body.kidId }}"
             }
           ]
         }
@@ -41,11 +77,99 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        208,
-        0
+        224,
+        -112
       ],
       "id": "ddc7c0bb-13f7-4a80-8edd-f559cb30d9db",
-      "name": "Get many rows",
+      "name": "get_assignments",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "GBvkr2itkiJQlc9g",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "ChoreTemplate",
+        "returnAll": true,
+        "filterType": "none"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -112
+      ],
+      "id": "95ac46bd-df86-43d0-8595-2188a8597c3e",
+      "name": "get_chore_templates",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "GBvkr2itkiJQlc9g",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "KidChoreLink",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "kidId",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.kidId}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -112
+      ],
+      "id": "69b9fd5f-a404-4a5e-92e7-cc6aa0914647",
+      "name": "get_kidchore_links",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "GBvkr2itkiJQlc9g",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "var assignments = []\nfor (const item of $('get_kidchore_links').all()) {\n  const kidId = item.json.kidId\n  const choreId = item.json.choreId\n\n  // calculate the date of the starting week\n  const currentDay = new Date().getDay()\n  const dateOffset = currentDay === 0 ? 6 : currentDay -1\n  const today = new Date()\n  today.setDate(today.getDate() - dateOffset)\n  const weekStart = today.toISOString().split('T')[0]\n  \n  // find choreTemplate for the current kidChoreLink\n  const chore = $(\"get_chore_templates\").all().filter(x => x.json.id === item.json.choreId)\n\n  // create chore assignment for the current link\n  var newAssignment = {\n    \"kidId\": kidId, \n    \"choreId\": choreId,\n    \"weekStart\": weekStart,\n  }\n  \n  // check frequency\n  switch (chore[0]?.json.frequency) {\n    case \"daily\":\n      // create a chore object for each day of the week that is due daily\n      for (let i = 0; i < 7; i++) {\n        const dueDate = new Date(today)\n        dueDate.setDate(dueDate.getDate() + i)\n\n        // make shallow copy of assignment object \n        const assignmentCopy = {...newAssignment}\n        assignmentCopy[\"dueDate\"] = dueDate.getTime()\n        // console.log(assignmentCopy)\n        assignments.push(assignmentCopy)\n      }\n      break;\n    case \"weekly\":\n      // check the day of the week the chore is due everyweek\n      const choreDueDayOfWeek = chore[0].json.dueDayOfWeek\n      // \n      const dueDate = new Date(today)\n      // offset the due day of week by 1 (Monday)\n      const offSet = choreDueDayOfWeek === 0 ? 6 : choreDueDayOfWeek - 1\n      dueDate.setDate(dueDate.getDate() + offSet)\n\n      // make shallow copy of assignment object\n      const weeklyAssignment = {...newAssignment}\n      //  add dueDate to assignment object\n      weeklyAssignment[\"dueDate\"] = dueDate.getTime()\n      // append to list of chores\n      assignments.push(weeklyAssignment)\n      break;\n    case \"biweekly\":\n    case \"custom\":\n      // make copy of assignment object\n      const biWeeklyAssignment = {...newAssignment}\n      // get due day interval\n      const dayInterval = chore[0]?.json?.dueIntervalDays\n      console.log(`Interval days is ${dayInterval || chore[0].json.frequency}`)\n      \n      // check last assignment date\n      const prevAssignment = $(\"get_assignments\").all().filter(\n        choreAssignment => choreAssignment.json.choreId === choreId && choreAssignment.json.kidId === kidId )\n\n      // if no previous assignment, this is a new chore and will need to create the first one for child\n      if (prevAssignment.length === 0) {\n        // set dueDate 2 weeks from start of this week\n        const biWeeklyDueDate = new Date(today)\n        biWeeklyDueDate.setDate(biWeeklyDueDate.getDate() + (dayInterval || 14))\n        biWeeklyAssignment[\"dueDate\"] = biWeeklyDueDate.getTime()\n      } else {\n        // check creation date of last assignment, check if 2 week time period has passed\n        const creationDate = new Date(prevAssignment[0]?.json.createdAt)\n        // const creationDate = new Date(\"2026-04-02T17:26:48.9119\")\n        const now = new Date()\n        const diff = Math.abs(now.getTime() - creationDate.getTime())\n        // calculate the difference ind days\n        const diffDays = diff / (1000 * 60 * 60 * 24)\n        if (diffDays > (dayInterval || 14)) {\n          biWeeklyAssignment[\"dueDate\"] = now.getTime()\n        }\n      }\n      biWeeklyAssignment.hasOwnProperty('dueDate') && assignments.push(biWeeklyAssignment)\n      break;\n    default:\n      console.log(`Unknown frequency: ${chore[0]?.json.frequency} for choreId ${choreId}`)\n      continue\n  }\n}\n\nreturn {\"json\": {\"assignments\": assignments}}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -112
+      ],
+      "id": "60e96233-bd9e-4089-ab0b-da43589390e0",
+      "name": "iterate_and_create_assignments"
+    },
+    {
+      "parameters": {
+        "tableId": "ChoreAssignment",
+        "dataToSend": "autoMapInputData"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        -112
+      ],
+      "id": "41b411cf-55ad-4f55-bd1c-9b5c63477ebd",
+      "name": "add_new_chore_assignments",
       "credentials": {
         "supabaseApi": {
           "id": "GBvkr2itkiJQlc9g",
@@ -59,7 +183,63 @@
       "main": [
         [
           {
-            "node": "Get many rows",
+            "node": "get_assignments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_if_assignments_exist": {
+      "main": [
+        [],
+        [
+          {
+            "node": "get_kidchore_links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_assignments": {
+      "main": [
+        [
+          {
+            "node": "check_if_assignments_exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_chore_templates": {
+      "main": [
+        [
+          {
+            "node": "iterate_and_create_assignments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_kidchore_links": {
+      "main": [
+        [
+          {
+            "node": "get_chore_templates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "iterate_and_create_assignments": {
+      "main": [
+        [
+          {
+            "node": "add_new_chore_assignments",
             "type": "main",
             "index": 0
           }
@@ -75,8 +255,187 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "pinData": {},
-  "versionId": "0d80c477-64ff-4d86-b1cc-75b0db4d5170",
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.nelson-torres.dev",
+            "user-agent": "curl/8.7.1",
+            "content-length": "49",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "104.189.133.229",
+            "cf-ipcountry": "US",
+            "cf-ray": "9e91db26c8bb730f-ATL",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "8771ffbd-6690-450e-bf7b-7fa54bb2f9ae",
+            "content-type": "application/json",
+            "x-forwarded-for": "104.189.133.229,10.244.2.113",
+            "x-forwarded-proto": "http",
+            "x-envoy-external-address": "10.244.2.113",
+            "x-request-id": "0e94ac85-e775-4d6c-8484-8f39971652f9"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901"
+          },
+          "webhookUrl": "https://n8n.nelson-torres.dev/webhook-test/generate-assignments",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "get_chore_templates": [
+      {
+        "json": {
+          "id": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "name": "Daily room tidy",
+          "description": "- make bed\n- make sure no clutter on the follor",
+          "value": 0.5,
+          "frequency": "daily",
+          "dueDayOfWeek": 1,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-04-02T17:03:25.405264+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "name": "Make Bed",
+          "description": "Make your bed every morning before school",
+          "value": 0.25,
+          "frequency": "daily",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "87f82b1d-0540-43ff-9088-348345715f49",
+          "name": "Do the Dishes",
+          "description": "Wash and put away all dishes after dinner",
+          "value": 0.5,
+          "frequency": "daily",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "8f5f3737-15f5-4056-81c9-946d54417529",
+          "name": "Take Out Trash",
+          "description": "Take trash bags to the curb",
+          "value": 1,
+          "frequency": "weekly",
+          "dueDayOfWeek": 3,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "e8086d87-a370-4f52-962f-429efd61f4d3",
+          "name": "Vacuum Living Room",
+          "description": "Vacuum the living room and hallway",
+          "value": 1.5,
+          "frequency": "weekly",
+          "dueDayOfWeek": 6,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "b01102e9-5ed8-4540-b4e0-0f68b607b081",
+          "name": "Clean Bathroom",
+          "description": "Scrub the sink and wipe down the toilet",
+          "value": 2,
+          "frequency": "biweekly",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": 14,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "cbbd1241-1415-4167-8821-e3cf9ffe2505",
+          "name": "Feed Pets",
+          "description": "Fill food and water bowls for the pets",
+          "value": 0.25,
+          "frequency": "daily",
+          "dueDayOfWeek": null,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "f4e8c51e-f1e5-42fb-a095-12403a180711",
+          "name": "Do Laundry",
+          "description": "Wash fold and put away one load of laundry",
+          "value": 1,
+          "frequency": "weekly",
+          "dueDayOfWeek": 5,
+          "dueIntervalDays": null,
+          "isActive": true,
+          "createdAt": "2026-01-15T10:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "add_new_chore_assignments": [
+      {
+        "json": {
+          "name": "First item",
+          "code": 1
+        }
+      },
+      {
+        "json": {
+          "name": "Second item",
+          "code": 2
+        }
+      }
+    ]
+  },
+  "versionId": "17cd4a07-97b9-441b-a780-49822eeedda4",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
