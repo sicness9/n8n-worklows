@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-09T14:52:54.984Z",
+  "updatedAt": "2026-04-09T15:13:18.436Z",
   "createdAt": "2026-04-07T15:11:24.171Z",
   "id": "BNy3FIkGRIiSxmUT",
   "name": "Assignment Generator",
@@ -146,7 +146,7 @@
     },
     {
       "parameters": {
-        "jsCode": "var assignments = []\nfor (const item of $('get_kidchore_links').all()) {\n  const kidId = item.json.kidId\n  const choreId = item.json.choreId\n\n  // calculate the date of the starting week\n  const currentDay = new Date().getDay()\n  const dateOffset = currentDay === 0 ? 6 : currentDay -1\n  const today = new Date()\n  today.setDate(today.getDate() - dateOffset)\n  const weekStart = today.toISOString().split('T')[0]\n  \n  // find choreTemplate for the current kidChoreLink\n  const chore = $(\"get_chore_templates\").all().filter(x => x.json.id === item.json.choreId)\n\n  // create chore assignment for the current link\n  var newAssignment = {\n    \"kidId\": kidId, \n    \"choreId\": choreId,\n    \"weekStart\": weekStart,\n  }\n  \n  // check frequency\n  switch (chore[0]?.json.frequency) {\n    case \"daily\":\n      // create a chore object for each day of the week that is due daily\n      for (let i = 0; i < 7; i++) {\n        const dueDate = new Date(today)\n        dueDate.setDate(dueDate.getDate() + i)\n\n        // make shallow copy of assignment object \n        const assignmentCopy = {...newAssignment}\n        assignmentCopy[\"dueDate\"] = dueDate.getTime()\n        // console.log(assignmentCopy)\n        assignments.push(assignmentCopy)\n      }\n      break;\n    case \"weekly\":\n      // check the day of the week the chore is due everyweek\n      const choreDueDayOfWeek = chore[0].json.dueDayOfWeek\n      // \n      const dueDate = new Date(today)\n      // offset the due day of week by 1 (Monday)\n      const offSet = choreDueDayOfWeek === 0 ? 6 : choreDueDayOfWeek - 1\n      dueDate.setDate(dueDate.getDate() + offSet)\n\n      // make shallow copy of assignment object\n      const weeklyAssignment = {...newAssignment}\n      //  add dueDate to assignment object\n      weeklyAssignment[\"dueDate\"] = dueDate.getTime()\n      // append to list of chores\n      assignments.push(weeklyAssignment)\n      break;\n    case \"biweekly\":\n    case \"custom\":\n      // make copy of assignment object\n      const biWeeklyAssignment = {...newAssignment}\n      // get due day interval\n      const dayInterval = chore[0]?.json?.dueIntervalDays\n      console.log(`Interval days is ${dayInterval || chore[0].json.frequency}`)\n      \n      // check last assignment date\n      const prevAssignment = $(\"get_assignments\").all().filter(\n        choreAssignment => choreAssignment.json.choreId === choreId && choreAssignment.json.kidId === kidId )\n\n      // if no previous assignment, this is a new chore and will need to create the first one for child\n      if (prevAssignment.length === 0) {\n        // set dueDate 2 weeks from start of this week\n        const biWeeklyDueDate = new Date(today)\n        biWeeklyDueDate.setDate(biWeeklyDueDate.getDate() + (dayInterval || 14))\n        biWeeklyAssignment[\"dueDate\"] = biWeeklyDueDate.getTime()\n      } else {\n        // check creation date of last assignment, check if 2 week time period has passed\n        const creationDate = new Date(prevAssignment[0]?.json.createdAt)\n        // const creationDate = new Date(\"2026-04-02T17:26:48.9119\")\n        const now = new Date()\n        const diff = Math.abs(now.getTime() - creationDate.getTime())\n        // calculate the difference ind days\n        const diffDays = diff / (1000 * 60 * 60 * 24)\n        if (diffDays > (dayInterval || 14)) {\n          biWeeklyAssignment[\"dueDate\"] = now.getTime()\n        }\n      }\n      biWeeklyAssignment.hasOwnProperty('dueDate') && assignments.push(biWeeklyAssignment)\n      break;\n    default:\n      console.log(`Unknown frequency: ${chore[0]?.json.frequency} for choreId ${choreId}`)\n      continue\n  }\n}\n\nreturn {\"json\": {\"assignments\": assignments}}\n"
+        "jsCode": "var assignments = []\nfor (const item of $('get_kidchore_links').all()) {\n  const kidId = item.json.kidId\n  const choreId = item.json.choreId\n\n  // calculate the date of the starting week\n  const currentDay = new Date().getDay()\n  const dateOffset = currentDay === 0 ? 6 : currentDay -1\n  const today = new Date()\n  today.setDate(today.getDate() - dateOffset)\n  const weekStart = today.toISOString().split('T')[0]\n  \n  // find choreTemplate for the current kidChoreLink\n  const chore = $(\"get_chore_templates\").all().filter(x => x.json.id === item.json.choreId)\n\n  // create chore assignment for the current link\n  var newAssignment = {\n    \"kidId\": kidId, \n    \"choreId\": choreId,\n    \"weekStart\": weekStart,\n  }\n  \n  // check frequency\n  switch (chore[0]?.json.frequency) {\n    case \"daily\":\n      // create a chore object for each day of the week that is due daily\n      for (let i = 0; i < 7; i++) {\n        const dueDate = new Date(today)\n        dueDate.setDate(dueDate.getDate() + i)\n\n        // make shallow copy of assignment object \n        const assignmentCopy = {...newAssignment}\n        assignmentCopy[\"dueDate\"] = dueDate.toISOString()\n        // console.log(assignmentCopy)\n        assignments.push(assignmentCopy)\n      }\n      break;\n    case \"weekly\":\n      // check the day of the week the chore is due everyweek\n      const choreDueDayOfWeek = chore[0].json.dueDayOfWeek\n      // \n      const dueDate = new Date(today)\n      // offset the due day of week by 1 (Monday)\n      const offSet = choreDueDayOfWeek === 0 ? 6 : choreDueDayOfWeek - 1\n      dueDate.setDate(dueDate.getDate() + offSet)\n\n      // make shallow copy of assignment object\n      const weeklyAssignment = {...newAssignment}\n      //  add dueDate to assignment object\n      weeklyAssignment[\"dueDate\"] = dueDate.toISOString()\n      // append to list of chores\n      assignments.push(weeklyAssignment)\n      break;\n    case \"biweekly\":\n    case \"custom\":\n      // make copy of assignment object\n      const biWeeklyAssignment = {...newAssignment}\n      // get due day interval\n      const dayInterval = chore[0]?.json?.dueIntervalDays\n      console.log(`Interval days is ${dayInterval || chore[0].json.frequency}`)\n      \n      // check last assignment date\n      const prevAssignment = $(\"get_assignments\").all().filter(\n        choreAssignment => choreAssignment.json.choreId === choreId && choreAssignment.json.kidId === kidId )\n\n      // if no previous assignment, this is a new chore and will need to create the first one for child\n      if (prevAssignment.length === 0) {\n        // set dueDate 2 weeks from start of this week\n        const biWeeklyDueDate = new Date(today)\n        biWeeklyDueDate.setDate(biWeeklyDueDate.getDate() + (dayInterval || 14))\n        biWeeklyAssignment[\"dueDate\"] = biWeeklyDueDate.toISOString()\n      } else {\n        // check creation date of last assignment, check if 2 week time period has passed\n        const creationDate = new Date(prevAssignment[0]?.json.createdAt)\n        // const creationDate = new Date(\"2026-04-02T17:26:48.9119\")\n        const now = new Date()\n        const diff = Math.abs(now.getTime() - creationDate.getTime())\n        // calculate the difference ind days\n        const diffDays = diff / (1000 * 60 * 60 * 24)\n        if (diffDays > (dayInterval || 14)) {\n          biWeeklyAssignment[\"dueDate\"] = now.toISOString()\n        }\n      }\n      biWeeklyAssignment.hasOwnProperty('dueDate') && assignments.push(biWeeklyAssignment)\n      break;\n    default:\n      console.log(`Unknown frequency: ${chore[0]?.json.frequency} for choreId ${choreId}`)\n      continue\n  }\n}\n\nreturn assignments\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -159,13 +159,13 @@
     },
     {
       "parameters": {
-        "tableId": "ChoreAssignment",
+        "tableId": "ChoreAssignment_test",
         "dataToSend": "autoMapInputData"
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1360,
+        1344,
         -112
       ],
       "id": "41b411cf-55ad-4f55-bd1c-9b5c63477ebd",
@@ -256,40 +256,6 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {
-    "Webhook": [
-      {
-        "json": {
-          "headers": {
-            "host": "n8n.nelson-torres.dev",
-            "user-agent": "curl/8.7.1",
-            "content-length": "49",
-            "accept": "*/*",
-            "accept-encoding": "gzip, br",
-            "cdn-loop": "cloudflare; loops=1",
-            "cf-connecting-ip": "104.189.133.229",
-            "cf-ipcountry": "US",
-            "cf-ray": "9e91db26c8bb730f-ATL",
-            "cf-visitor": "{\"scheme\":\"https\"}",
-            "cf-warp-tag-id": "8771ffbd-6690-450e-bf7b-7fa54bb2f9ae",
-            "content-type": "application/json",
-            "x-forwarded-for": "104.189.133.229,10.244.2.113",
-            "x-forwarded-proto": "http",
-            "x-envoy-external-address": "10.244.2.113",
-            "x-request-id": "0e94ac85-e775-4d6c-8484-8f39971652f9"
-          },
-          "params": {},
-          "query": {},
-          "body": {
-            "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901"
-          },
-          "webhookUrl": "https://n8n.nelson-torres.dev/webhook-test/generate-assignments",
-          "executionMode": "test"
-        },
-        "pairedItem": {
-          "item": 0
-        }
-      }
-    ],
     "get_chore_templates": [
       {
         "json": {
@@ -423,19 +389,895 @@
     "add_new_chore_assignments": [
       {
         "json": {
-          "name": "First item",
-          "code": 1
+          "id": "a125b22c-e97c-44ca-8679-c3bcc3ae6356",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-06T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 0
         }
       },
       {
         "json": {
-          "name": "Second item",
-          "code": 2
+          "id": "c9dfb866-0861-414e-a5e3-c0feb499302b",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-07T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "ee4f4633-e8a5-4023-b493-5651a9a80989",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-08T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "id": "254861c4-38fc-4313-aecc-7751dc833bb1",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-09T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "id": "38f2e61f-82e0-441c-8c6c-8d3999e379ce",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-10T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      },
+      {
+        "json": {
+          "id": "94f9fd6c-7eff-43f9-9098-298ef3d9feab",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-11T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 5
+        }
+      },
+      {
+        "json": {
+          "id": "5eba4474-9f1b-4dd1-a28a-928fee2c36cd",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-12T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 6
+        }
+      },
+      {
+        "json": {
+          "id": "cb895bdc-bf12-4ab9-aba8-05df0fc70066",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-06T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 7
+        }
+      },
+      {
+        "json": {
+          "id": "399c7541-3dd5-478e-8413-990fbcc4d682",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-07T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 8
+        }
+      },
+      {
+        "json": {
+          "id": "73a8c490-1ace-42aa-917e-ec2118eea118",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-08T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 9
+        }
+      },
+      {
+        "json": {
+          "id": "ebe69e0a-bc4b-43bb-94d2-8e1740c3c754",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-09T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 10
+        }
+      },
+      {
+        "json": {
+          "id": "a4c7fd88-d459-483c-a0d8-abcd4c41b6b0",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-10T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 11
+        }
+      },
+      {
+        "json": {
+          "id": "49eafea7-ba88-4b27-aadb-7b1a501cf1c4",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-11T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 12
+        }
+      },
+      {
+        "json": {
+          "id": "35174aa8-fc10-48c2-bab3-47db9c6c4cac",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-12T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 13
+        }
+      },
+      {
+        "json": {
+          "id": "6594599e-b0a5-48b5-a98f-615c46e990de",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-06T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 14
+        }
+      },
+      {
+        "json": {
+          "id": "7d9f8bff-ae44-4109-b32c-f83ebf63a440",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-07T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 15
+        }
+      },
+      {
+        "json": {
+          "id": "06f4a319-02d5-4296-8756-26c9798701a0",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-08T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 16
+        }
+      },
+      {
+        "json": {
+          "id": "b526d32f-06d5-4827-884a-3a6c52bf0fc5",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-09T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 17
+        }
+      },
+      {
+        "json": {
+          "id": "071ce0d1-84c7-4ca3-9ae4-fb9fd5ae2857",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-10T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 18
+        }
+      },
+      {
+        "json": {
+          "id": "042897b6-a29e-4635-a525-5bb1a95d44fb",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-11T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 19
+        }
+      },
+      {
+        "json": {
+          "id": "2acf0467-b625-4152-bdcc-7745dd929d11",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-12T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 20
+        }
+      },
+      {
+        "json": {
+          "id": "0ee1dbb2-f511-4d66-8682-6e3f3fcd87d9",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "8f5f3737-15f5-4056-81c9-946d54417529",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-08T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 21
+        }
+      },
+      {
+        "json": {
+          "id": "89c6f785-7f00-471d-b0ee-a12838403552",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "e8086d87-a370-4f52-962f-429efd61f4d3",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-11T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 22
+        }
+      },
+      {
+        "json": {
+          "id": "6514e09e-4b90-47be-b120-bd478b397602",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "b01102e9-5ed8-4540-b4e0-0f68b607b081",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-20T15:09:05.873+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-09T15:09:15.476122+00:00"
+        },
+        "pairedItem": {
+          "item": 23
+        }
+      }
+    ],
+    "iterate_and_create_assignments": [
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-06T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-07T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-08T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-09T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-10T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-11T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-12T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-06T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-07T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-08T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-09T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-10T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-11T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-12T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-06T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-07T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-08T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-09T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-10T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-11T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-12T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "8f5f3737-15f5-4056-81c9-946d54417529",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-08T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "e8086d87-a370-4f52-962f-429efd61f4d3",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-11T15:09:05.873Z"
+        }
+      },
+      {
+        "json": {
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "b01102e9-5ed8-4540-b4e0-0f68b607b081",
+          "weekStart": "2026-04-06",
+          "dueDate": "2026-04-20T15:09:05.873Z"
+        }
+      }
+    ],
+    "get_kidchore_links": [
+      {
+        "json": {
+          "id": "f45ffbd0-3d14-4c09-ad4a-cd38312514dd",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "ad7ebc29-11db-4904-b836-20c371f483de",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "5e7c3d7a-7f17-4281-811c-f9c7ac063093",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "f1b4f7cc-42e8-4aae-8e05-708a2fd71e28",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "8f5f3737-15f5-4056-81c9-946d54417529"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "13390046-3ce0-4d92-b9b7-01587d26b93b",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "e8086d87-a370-4f52-962f-429efd61f4d3"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "1519e424-411d-42ec-b3ae-16c6ee12a8a3",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "b01102e9-5ed8-4540-b4e0-0f68b607b081"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "get_assignments": [
+      {
+        "json": {
+          "id": "d381486d-4524-4f71-b359-6e0ec0de3af7",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-30T00:00:00+00:00",
+          "completedAt": "2026-03-30T00:00:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-04-02T17:26:48.911967+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "8089ded7-7c9d-4144-8cfe-1efd8349b0fa",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-30T23:59:59+00:00",
+          "completedAt": "2026-03-30T08:15:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "6ec11b51-3f95-4e2b-95a8-89678804c6e9",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-31T23:59:59+00:00",
+          "completedAt": "2026-03-31T07:45:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "139f7baa-d88c-4982-9ea2-b25bf25a5a2c",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-30T23:59:59+00:00",
+          "completedAt": "2026-03-30T19:30:00+00:00",
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "c1af0e0f-71ea-476b-b93b-dc9753bd70a1",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-03-31T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "d1bea8c5-244d-48a5-9093-86760cb676b2",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-02T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "33a0fdfc-9237-4f7d-b162-922bb3f1895d",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-01T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "390851e4-661e-4082-bc08-dafdf7fac7a3",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "55c35df2-f819-4e17-ab14-b58fa95ef3c1",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-02T00:00:00+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-04-02T17:21:11.421366+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "67aadfb8-193f-4cfb-aa81-4f7bea17bcc0",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-01T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "7551a225-7246-4ce3-8209-5b78b9588b21",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-02T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "995c01dc-248d-40f0-a23a-d8d0a55e553c",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "8f5f3737-15f5-4056-81c9-946d54417529",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-01T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": true,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "8f550661-1794-4daf-9177-2b5c3c4ea5cf",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-03T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "ff7252aa-300b-44f9-b3fe-8d068f28dc40",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-04T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "d39e7d45-3414-4842-a3b0-7eb56e1c7743",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "f68a6e12-2261-4b91-be6e-36ad66cb1cca",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-05T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "03030985-56a0-4365-abf1-07f846358040",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-03T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "9ad689ef-18d9-4a73-b4e4-10039e243961",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-04T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "5bc07ef7-8d20-4e6f-b397-23e533732bb6",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "87f82b1d-0540-43ff-9088-348345715f49",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-05T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "fc302f4e-622f-4010-8a52-fff5bb61338a",
+          "kidId": "dc048080-b3ec-44bf-9d7a-09f9b2483901",
+          "choreId": "e8086d87-a370-4f52-962f-429efd61f4d3",
+          "weekStart": "2026-03-30",
+          "dueDate": "2026-04-04T23:59:59+00:00",
+          "completedAt": null,
+          "notifiedOverdue": false,
+          "createdAt": "2026-03-30T00:00:00+00:00"
+        },
+        "pairedItem": {
+          "item": 0
         }
       }
     ]
   },
-  "versionId": "17cd4a07-97b9-441b-a780-49822eeedda4",
+  "versionId": "3faf4aca-7db7-4842-9175-4faa6db5ecac",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
