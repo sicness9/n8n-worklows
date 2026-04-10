@@ -1,15 +1,15 @@
 {
-  "updatedAt": "2026-04-09T15:39:24.844Z",
+  "updatedAt": "2026-04-09T17:17:27.320Z",
   "createdAt": "2026-04-09T15:29:15.111Z",
   "id": "AzKQZoNEH5JT6mML",
   "name": "Mark Chore Complete",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "complete-assignment",
+        "path": ":assignmentId/complete-assignment",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -33,7 +33,7 @@
             {
               "keyName": "id",
               "condition": "eq",
-              "keyValue": "={{ $json.body.assignmentId }}"
+              "keyValue": "={{ $json.params.assignmentId }}"
             }
           ]
         },
@@ -83,10 +83,47 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "pinData": {},
-  "versionId": "a97996bd-5f60-443c-bc34-f2308a60aacc",
-  "activeVersionId": null,
-  "triggerCount": 0,
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.nelson-torres.dev",
+            "user-agent": "curl/8.7.1",
+            "content-length": "22",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "104.189.133.229",
+            "cf-ipcountry": "US",
+            "cf-ray": "9e9b28800c4ba8a4-ATL",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "8771ffbd-6690-450e-bf7b-7fa54bb2f9ae",
+            "content-type": "application/json",
+            "x-forwarded-for": "104.189.133.229,10.244.2.113",
+            "x-forwarded-proto": "http",
+            "x-envoy-external-address": "10.244.2.113",
+            "x-request-id": "bc970389-c6a1-4893-8372-2f0ffb0065f6"
+          },
+          "params": {
+            "assignmentId": "06f4a319-02d5-4296-8756-26c9798701a0"
+          },
+          "query": {},
+          "body": {
+            "completed": "false"
+          },
+          "webhookUrl": "https://n8n.nelson-torres.dev/webhook/b58d526e-9be1-45cb-b453-b774fcfdc1fe/:assignmentId/complete-assignment",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "4bd5228d-bc5b-4510-af5c-f18eac8edae6",
+  "activeVersionId": "4bd5228d-bc5b-4510-af5c-f18eac8edae6",
+  "triggerCount": 1,
   "shared": [
     {
       "updatedAt": "2026-04-09T15:29:15.115Z",
@@ -96,6 +133,85 @@
       "projectId": "TxCYhXtkt9tpKOLj"
     }
   ],
-  "activeVersion": null,
+  "activeVersion": {
+    "updatedAt": "2026-04-09T17:17:54.000Z",
+    "createdAt": "2026-04-09T17:17:27.321Z",
+    "versionId": "4bd5228d-bc5b-4510-af5c-f18eac8edae6",
+    "workflowId": "AzKQZoNEH5JT6mML",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": ":assignmentId/complete-assignment",
+          "responseMode": "lastNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "4ebf93f3-5122-4715-8ebc-0b445f088dce",
+        "name": "Webhook",
+        "webhookId": "b58d526e-9be1-45cb-b453-b774fcfdc1fe"
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "tableId": "ChoreAssignment_test",
+          "matchType": "allFilters",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "id",
+                "condition": "eq",
+                "keyValue": "={{ $json.params.assignmentId }}"
+              }
+            ]
+          },
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "completedAt",
+                "fieldValue": "={{ $json.body.completed === true ? $now : null }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          224,
+          0
+        ],
+        "id": "68cdbf6b-0b9d-4a59-829f-eb4413bb9fe5",
+        "name": "Update a row",
+        "credentials": {
+          "supabaseApi": {
+            "id": "GBvkr2itkiJQlc9g",
+            "name": "Supabase account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Update a row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": "mark_chore_complete_v1.0.1",
+    "description": "",
+    "autosaved": true
+  },
   "tags": []
 }
