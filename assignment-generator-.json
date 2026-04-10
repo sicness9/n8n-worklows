@@ -3,7 +3,7 @@
   "createdAt": "2026-04-07T15:11:24.171Z",
   "id": "BNy3FIkGRIiSxmUT",
   "name": "Assignment Generator",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -1278,8 +1278,8 @@
     ]
   },
   "versionId": "3faf4aca-7db7-4842-9175-4faa6db5ecac",
-  "activeVersionId": null,
-  "triggerCount": 0,
+  "activeVersionId": "3faf4aca-7db7-4842-9175-4faa6db5ecac",
+  "triggerCount": 1,
   "shared": [
     {
       "updatedAt": "2026-04-07T15:11:24.174Z",
@@ -1289,6 +1289,257 @@
       "projectId": "TxCYhXtkt9tpKOLj"
     }
   ],
-  "activeVersion": null,
+  "activeVersion": {
+    "updatedAt": "2026-04-09T16:57:32.000Z",
+    "createdAt": "2026-04-09T15:12:52.398Z",
+    "versionId": "3faf4aca-7db7-4842-9175-4faa6db5ecac",
+    "workflowId": "BNy3FIkGRIiSxmUT",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "/generate-assignments",
+          "responseMode": "lastNode",
+          "responseData": "allEntries",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          -112
+        ],
+        "id": "37de88ba-f386-4efb-a3d0-e2b8cf262e0f",
+        "name": "Webhook",
+        "webhookId": "1b5a4c32-4b3a-4ba5-a4d9-d690dddee468"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "5d533c54-156c-43e8-a217-91b96b7ab484",
+                "leftValue": "={{ $json.weekStart }}",
+                "rightValue": "={{ \n$today.startOf('week')\n}}",
+                "operator": {
+                  "type": "dateTime",
+                  "operation": "afterOrEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          448,
+          -112
+        ],
+        "id": "e591d898-8d2f-4c07-99ae-d9dc1c9905e4",
+        "name": "check_if_assignments_exist"
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "ChoreAssignment",
+          "returnAll": true,
+          "matchType": "allFilters",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "kidId",
+                "condition": "eq",
+                "keyValue": "={{ $json.body.kidId }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          224,
+          -112
+        ],
+        "id": "ddc7c0bb-13f7-4a80-8edd-f559cb30d9db",
+        "name": "get_assignments",
+        "alwaysOutputData": true,
+        "credentials": {
+          "supabaseApi": {
+            "id": "GBvkr2itkiJQlc9g",
+            "name": "Supabase account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "ChoreTemplate",
+          "returnAll": true,
+          "filterType": "none"
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          896,
+          -112
+        ],
+        "id": "95ac46bd-df86-43d0-8595-2188a8597c3e",
+        "name": "get_chore_templates",
+        "executeOnce": true,
+        "credentials": {
+          "supabaseApi": {
+            "id": "GBvkr2itkiJQlc9g",
+            "name": "Supabase account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "KidChoreLink",
+          "returnAll": true,
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "kidId",
+                "condition": "eq",
+                "keyValue": "={{ $('Webhook').item.json.body.kidId}}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          672,
+          -112
+        ],
+        "id": "69b9fd5f-a404-4a5e-92e7-cc6aa0914647",
+        "name": "get_kidchore_links",
+        "executeOnce": true,
+        "credentials": {
+          "supabaseApi": {
+            "id": "GBvkr2itkiJQlc9g",
+            "name": "Supabase account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "var assignments = []\nfor (const item of $('get_kidchore_links').all()) {\n  const kidId = item.json.kidId\n  const choreId = item.json.choreId\n\n  // calculate the date of the starting week\n  const currentDay = new Date().getDay()\n  const dateOffset = currentDay === 0 ? 6 : currentDay -1\n  const today = new Date()\n  today.setDate(today.getDate() - dateOffset)\n  const weekStart = today.toISOString().split('T')[0]\n  \n  // find choreTemplate for the current kidChoreLink\n  const chore = $(\"get_chore_templates\").all().filter(x => x.json.id === item.json.choreId)\n\n  // create chore assignment for the current link\n  var newAssignment = {\n    \"kidId\": kidId, \n    \"choreId\": choreId,\n    \"weekStart\": weekStart,\n  }\n  \n  // check frequency\n  switch (chore[0]?.json.frequency) {\n    case \"daily\":\n      // create a chore object for each day of the week that is due daily\n      for (let i = 0; i < 7; i++) {\n        const dueDate = new Date(today)\n        dueDate.setDate(dueDate.getDate() + i)\n\n        // make shallow copy of assignment object \n        const assignmentCopy = {...newAssignment}\n        assignmentCopy[\"dueDate\"] = dueDate.toISOString()\n        // console.log(assignmentCopy)\n        assignments.push(assignmentCopy)\n      }\n      break;\n    case \"weekly\":\n      // check the day of the week the chore is due everyweek\n      const choreDueDayOfWeek = chore[0].json.dueDayOfWeek\n      // \n      const dueDate = new Date(today)\n      // offset the due day of week by 1 (Monday)\n      const offSet = choreDueDayOfWeek === 0 ? 6 : choreDueDayOfWeek - 1\n      dueDate.setDate(dueDate.getDate() + offSet)\n\n      // make shallow copy of assignment object\n      const weeklyAssignment = {...newAssignment}\n      //  add dueDate to assignment object\n      weeklyAssignment[\"dueDate\"] = dueDate.toISOString()\n      // append to list of chores\n      assignments.push(weeklyAssignment)\n      break;\n    case \"biweekly\":\n    case \"custom\":\n      // make copy of assignment object\n      const biWeeklyAssignment = {...newAssignment}\n      // get due day interval\n      const dayInterval = chore[0]?.json?.dueIntervalDays\n      console.log(`Interval days is ${dayInterval || chore[0].json.frequency}`)\n      \n      // check last assignment date\n      const prevAssignment = $(\"get_assignments\").all().filter(\n        choreAssignment => choreAssignment.json.choreId === choreId && choreAssignment.json.kidId === kidId )\n\n      // if no previous assignment, this is a new chore and will need to create the first one for child\n      if (prevAssignment.length === 0) {\n        // set dueDate 2 weeks from start of this week\n        const biWeeklyDueDate = new Date(today)\n        biWeeklyDueDate.setDate(biWeeklyDueDate.getDate() + (dayInterval || 14))\n        biWeeklyAssignment[\"dueDate\"] = biWeeklyDueDate.toISOString()\n      } else {\n        // check creation date of last assignment, check if 2 week time period has passed\n        const creationDate = new Date(prevAssignment[0]?.json.createdAt)\n        // const creationDate = new Date(\"2026-04-02T17:26:48.9119\")\n        const now = new Date()\n        const diff = Math.abs(now.getTime() - creationDate.getTime())\n        // calculate the difference ind days\n        const diffDays = diff / (1000 * 60 * 60 * 24)\n        if (diffDays > (dayInterval || 14)) {\n          biWeeklyAssignment[\"dueDate\"] = now.toISOString()\n        }\n      }\n      biWeeklyAssignment.hasOwnProperty('dueDate') && assignments.push(biWeeklyAssignment)\n      break;\n    default:\n      console.log(`Unknown frequency: ${chore[0]?.json.frequency} for choreId ${choreId}`)\n      continue\n  }\n}\n\nreturn assignments\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1120,
+          -112
+        ],
+        "id": "60e96233-bd9e-4089-ab0b-da43589390e0",
+        "name": "iterate_and_create_assignments"
+      },
+      {
+        "parameters": {
+          "tableId": "ChoreAssignment_test",
+          "dataToSend": "autoMapInputData"
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          1344,
+          -112
+        ],
+        "id": "41b411cf-55ad-4f55-bd1c-9b5c63477ebd",
+        "name": "add_new_chore_assignments",
+        "credentials": {
+          "supabaseApi": {
+            "id": "GBvkr2itkiJQlc9g",
+            "name": "Supabase account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "get_assignments",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "check_if_assignments_exist": {
+        "main": [
+          [],
+          [
+            {
+              "node": "get_kidchore_links",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "get_assignments": {
+        "main": [
+          [
+            {
+              "node": "check_if_assignments_exist",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "get_chore_templates": {
+        "main": [
+          [
+            {
+              "node": "iterate_and_create_assignments",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "get_kidchore_links": {
+        "main": [
+          [
+            {
+              "node": "get_chore_templates",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "iterate_and_create_assignments": {
+        "main": [
+          [
+            {
+              "node": "add_new_chore_assignments",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": "assignment_generator_v1.0.0",
+    "description": "",
+    "autosaved": true
+  },
   "tags": []
 }
