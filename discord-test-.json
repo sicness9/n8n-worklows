@@ -1,0 +1,170 @@
+{
+  "updatedAt": "2026-04-09T17:32:44.310Z",
+  "createdAt": "2026-04-09T17:25:38.596Z",
+  "id": "xkl8N91pBmULbWyr",
+  "name": "Discord Test",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "discord/test",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4f562cc1-f8a6-4c4b-8e05-bd39b73ae4f5",
+      "name": "Webhook",
+      "webhookId": "ac842b37-4d40-47b3-8b3b-283bdbb9e47d"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1128520915232227328",
+          "mode": "id"
+        },
+        "sendTo": "user",
+        "userId": {
+          "__rl": true,
+          "value": "={{ $json.body.target }}",
+          "mode": "id"
+        },
+        "content": "Testing discord message....",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c99590db-39e4-4093-a76c-ab1f8a950d05",
+      "name": "Send a message",
+      "webhookId": "6b76215f-79af-4189-979b-2202318c317f",
+      "credentials": {
+        "discordBotApi": {
+          "id": "23p8t8drWw18Fp4s",
+          "name": "Discord Bot account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "3f5596db-083f-433c-bba5-0a1a92aca84d",
+  "activeVersionId": "3f5596db-083f-433c-bba5-0a1a92aca84d",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-09T17:25:38.602Z",
+      "createdAt": "2026-04-09T17:25:38.602Z",
+      "role": "workflow:owner",
+      "workflowId": "xkl8N91pBmULbWyr",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-04-09T17:32:53.000Z",
+    "createdAt": "2026-04-09T17:32:10.218Z",
+    "versionId": "3f5596db-083f-433c-bba5-0a1a92aca84d",
+    "workflowId": "xkl8N91pBmULbWyr",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "discord/test",
+          "responseMode": "lastNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "4f562cc1-f8a6-4c4b-8e05-bd39b73ae4f5",
+        "name": "Webhook",
+        "webhookId": "ac842b37-4d40-47b3-8b3b-283bdbb9e47d"
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "guildId": {
+            "__rl": true,
+            "value": "1128520915232227328",
+            "mode": "id"
+          },
+          "sendTo": "user",
+          "userId": {
+            "__rl": true,
+            "value": "={{ $json.body.target }}",
+            "mode": "id"
+          },
+          "content": "Testing discord message....",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.discord",
+        "typeVersion": 2,
+        "position": [
+          208,
+          0
+        ],
+        "id": "c99590db-39e4-4093-a76c-ab1f8a950d05",
+        "name": "Send a message",
+        "webhookId": "6b76215f-79af-4189-979b-2202318c317f",
+        "credentials": {
+          "discordBotApi": {
+            "id": "23p8t8drWw18Fp4s",
+            "name": "Discord Bot account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Send a message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": "discord_test_v1.0.0",
+    "description": "",
+    "autosaved": true
+  },
+  "tags": []
+}
