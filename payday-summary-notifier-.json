@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-07T20:03:38.990Z",
+  "updatedAt": "2026-04-09T17:25:21.123Z",
   "createdAt": "2026-04-03T18:35:21.475Z",
   "id": "mzBSnyoUZgatEhJ9",
   "name": "Payday Summary Notifier",
@@ -23,8 +23,8 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        0,
-        512
+        208,
+        368
       ],
       "id": "4ac9a25d-1026-4865-87af-23436b5f90cd",
       "name": "Schedule Trigger"
@@ -57,7 +57,7 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.3,
       "position": [
-        448,
+        656,
         512
       ],
       "id": "c3e2d7f8-f145-481f-999b-48ed90b4794b",
@@ -82,7 +82,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1120,
+        1328,
         560
       ],
       "id": "3860f9dd-4280-478a-aaa5-3e690c07e873",
@@ -114,7 +114,7 @@
       "type": "n8n-nodes-base.discord",
       "typeVersion": 2,
       "position": [
-        1568,
+        1776,
         368
       ],
       "id": "924f0032-721c-4e4d-8fd8-1036966998ad",
@@ -147,7 +147,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        224,
+        432,
         512
       ],
       "id": "ef5c885b-d1da-4f43-bf2e-b187efc2c69f",
@@ -166,7 +166,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
+        880,
         512
       ],
       "id": "1153c1f1-3ac6-4cd8-954a-517f93e1eb19",
@@ -182,7 +182,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1120,
+        1328,
         368
       ],
       "id": "d5797bde-0af6-4a43-bca1-417421c3a2fb",
@@ -202,7 +202,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        896,
+        1104,
         512
       ],
       "id": "b4b27a51-2993-49df-ba8a-d7b0e88973fb",
@@ -215,11 +215,27 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1344,
+        1552,
         368
       ],
       "id": "e513b92b-b064-44d2-8c2f-e7dde0cbf03b",
       "name": "format_message"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "discord-summary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        560
+      ],
+      "id": "d84a0357-1da6-4a88-849e-46df95a0f6f3",
+      "name": "Webhook",
+      "webhookId": "4b2be5cd-756f-4df1-9629-78e11853a0b6"
     }
   ],
   "connections": {
@@ -317,6 +333,17 @@
         [
           {
             "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "get_assignments",
             "type": "main",
             "index": 0
           }
@@ -1180,7 +1207,7 @@
       }
     ]
   },
-  "versionId": "a2bbe22a-597c-4980-9574-c05e66da3b0e",
+  "versionId": "d51b645c-dee7-4379-87c2-10bafa312c21",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
