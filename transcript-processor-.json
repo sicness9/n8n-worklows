@@ -1,0 +1,343 @@
+{
+  "updatedAt": "2026-05-05T22:06:52.498Z",
+  "createdAt": "2026-05-05T22:06:52.498Z",
+  "id": "BEbTiKeubM88NGOO",
+  "name": "Transcript Processor",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "83797451-0b9a-4811-a2b2-720d7cbf5e75",
+      "name": "Receive Transcript",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        200
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "transcript-processor",
+        "responseMode": "onReceived"
+      },
+      "webhookId": "c0e4ea29-7c25-4a6a-b522-6bf805cd236c"
+    },
+    {
+      "id": "65eeb66d-85b7-4e81-a810-cf37fa70c07a",
+      "name": "Build Transcript Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst promptLines = [\n  '# Transcript Processor',\n  '',\n  'Process this meeting transcript and extract action items.',\n  '',\n  '## Step 1: Extract',\n  '- Meeting title/topic (from subject or opening lines)',\n  '- Date and time',\n  '- Attendees (from speaker labels or headers)',\n  '- Key decisions made',\n  '- Explicit commitments (first-person: I will send, I need to, I will follow up)',\n  '- Assignments to Nelson (direct: Nelson can you, Nelson will handle)',\n  '',\n  '## Step 2: Self-Review',\n  '- Deduplicate items >80% same intent',\n  '- Remove items with no action verb, too vague, already done, or pure acknowledgment',\n  '',\n  '## Step 3: Confidence Scoring',\n  '- high: Explicit first-person commitment by Nelson, or direct assignment to Nelson',\n  '- medium: Relevant to Nelson, actionable, but owner unclear or phrasing vague',\n  '- low: Brainstorm, no resolution -- DISCARD these silently',\n  '',\n  '## Return JSON',\n  'Return ONLY valid JSON:',\n  '{\"meeting_title\": \"str\", \"date\": \"YYYY-MM-DD or null\",',\n  '\"attendees\": [\"name\"], \"decisions\": [\"str\"],',\n  '\"tasks\": [{\"title\": \"str\", \"description\": \"str\",',\n  '\"owner\": \"nelson|other:name|unclear\",',\n  '\"confidence\": \"high|medium\", \"source_quote\": \"str\"}]}'\n];\nconst systemPrompt = promptLines.join('\\n');\nvar emailSubject = input.subject || input.email_subject || 'Meeting Transcript';\nvar emailBody = input.body || input.email_body || input.transcript || '';\nvar sender = input.from || input.sender || 'Unknown';\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 2048,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Email Subject: ' + emailSubject + '\\nFrom: ' + sender + '\\n\\nTranscript:\\n' + emailBody\n  }]\n}}];"
+      }
+    },
+    {
+      "id": "8998ab63-a11f-47c2-9fce-221ab3dad8c1",
+      "name": "Process via Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        740,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}"
+      }
+    },
+    {
+      "id": "7faac53e-5304-4e20-b528-92c9b25b3c2b",
+      "name": "Parse and Classify Tasks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.heldItems) staticData.heldItems = [];\n\nlet parsed;\ntry {\n  const text = response.content[0].text;\n  parsed = JSON.parse(text);\n} catch (e) {\n  return [{ json: { error: true, message: e.message, high_tasks: [], medium_held: 0, meeting_title: 'Parse Error' } }];\n}\n\nconst highTasks = [];\nconst mediumTasks = [];\nconst tasks = parsed.tasks || [];\n\nfor (var i = 0; i < tasks.length; i++) {\n  var task = tasks[i];\n  if (task.confidence === 'high') {\n    highTasks.push(task);\n  } else if (task.confidence === 'medium') {\n    mediumTasks.push(task);\n    staticData.heldItems.push({\n      title: task.title,\n      meeting: parsed.meeting_title || 'Unknown',\n      stored_at: new Date().toISOString()\n    });\n  }\n}\n\nvar highTaskTitles = highTasks.map(function(t) { return t.title; });\nvar slackMessage = 'Processed: ' + (parsed.meeting_title || 'Unknown Meeting') + '\\n' +\n  'Would create ' + highTasks.length + ' tasks in Asana\\n';\nfor (var j = 0; j < highTaskTitles.length; j++) {\n  slackMessage += '  - ' + highTaskTitles[j] + '\\n';\n}\nslackMessage += 'Held ' + mediumTasks.length + ' items for tonight digest';\n\nreturn [{ json: {\n  meeting_title: parsed.meeting_title || 'Unknown',\n  date: parsed.date,\n  attendees: parsed.attendees || [],\n  decisions: parsed.decisions || [],\n  high_tasks: highTasks,\n  medium_held: mediumTasks.length,\n  total_held_in_store: staticData.heldItems.length,\n  slack_message: slackMessage\n} }];"
+      }
+    },
+    {
+      "id": "aa000001-archive-save-webhook-0001",
+      "name": "Archive Save Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        200
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n-adq.nelson-torres.dev/webhook/transcript-archive",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ {filename: $json.date + '_' + $json.meeting_title + '.md', content: $('Receive Transcript').first().json.body || ''} }}"
+      }
+    },
+    {
+      "id": "aa000002-sticky-note-archive-0001",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        60
+      ],
+      "parameters": {
+        "content": "Sends raw transcript to n8n-adq for local archive. Non-blocking."
+      }
+    },
+    {
+      "id": "e99e95c0-9b13-4037-aab0-8d5448895904",
+      "name": "Log: Processing Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1340,
+        200
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"transcript_processed\", \"meeting\": $json.meeting_title, \"high_tasks_count\": $json.high_tasks?.length || 0, \"medium_held\": $json.medium_held || 0, \"would_send_slack\": $json.slack_message, \"would_create_asana_tasks\": $json.high_tasks} }}"
+      }
+    },
+    {
+      "id": "1c31b16f-8dbf-41b0-bbd9-53e3c73d3ea8",
+      "name": "Daily 7 PM Digest",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        600
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 19,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b7811cdd-a991-4603-a453-3ca520575805",
+      "name": "Check Held Items for Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        600
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst heldItems = staticData.heldItems || [];\n\nif (heldItems.length === 0) {\n  return [{ json: { has_items: false, count: 0, digest_message: '' } }];\n}\n\nvar lines = [heldItems.length + ' items held from today transcripts:'];\nfor (var i = 0; i < heldItems.length; i++) {\n  lines.push((i + 1) + '. ' + heldItems[i].title + ' (from: ' + heldItems[i].meeting + ')');\n}\nlines.push('Tell Iris create 1,2 or skip all. Auto-expires in 24h.');\n\nstaticData.heldItems = [];\n\nreturn [{ json: {\n  has_items: true,\n  count: heldItems.length,\n  digest_message: lines.join('\\n')\n} }];"
+      }
+    },
+    {
+      "id": "a270f4de-38de-4da4-a43c-6b08afec54e7",
+      "name": "Has Held Items",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        740,
+        600
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.has_items }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6c60dd04-0e0f-4fc3-97e7-8d80fa8568b8",
+      "name": "Log: 7 PM Digest DM",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        980,
+        500
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm_digest\", \"item_count\": $json.count, \"would_send\": $json.digest_message} }}"
+      }
+    },
+    {
+      "id": "e10b9e0e-7867-4baf-ac64-b987959411a4",
+      "name": "No Items to Digest",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        980,
+        700
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Receive Transcript": {
+      "main": [
+        [
+          {
+            "node": "Build Transcript Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Transcript Request": {
+      "main": [
+        [
+          {
+            "node": "Process via Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process via Claude": {
+      "main": [
+        [
+          {
+            "node": "Parse and Classify Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse and Classify Tasks": {
+      "main": [
+        [
+          {
+            "node": "Archive Save Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Archive Save Webhook": {
+      "main": [
+        [
+          {
+            "node": "Log: Processing Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 7 PM Digest": {
+      "main": [
+        [
+          {
+            "node": "Check Held Items for Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Held Items for Digest": {
+      "main": [
+        [
+          {
+            "node": "Has Held Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Held Items": {
+      "main": [
+        [
+          {
+            "node": "Log: 7 PM Digest DM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Items to Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "fc430706-8f15-44e2-a0f2-c51f619c0c09",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-05T22:06:52.500Z",
+      "createdAt": "2026-05-05T22:06:52.500Z",
+      "role": "workflow:owner",
+      "workflowId": "BEbTiKeubM88NGOO",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
