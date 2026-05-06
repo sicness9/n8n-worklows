@@ -1,0 +1,208 @@
+{
+  "updatedAt": "2026-05-05T22:06:52.387Z",
+  "createdAt": "2026-05-05T22:06:52.387Z",
+  "id": "07JQoukoPdg9dGA1",
+  "name": "Follow-Up Tracker",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "509c4193-ed1d-4244-966d-0a2b4a6b89a3",
+      "name": "Receive Follow-Up from WF1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        200
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "follow-up-store",
+        "responseMode": "onReceived"
+      },
+      "webhookId": "3e65a82b-370d-42ec-96d1-550ec03b5fc5"
+    },
+    {
+      "id": "9d59af8c-602a-4cb6-876b-bc15e076c97b",
+      "name": "Store in Static Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.followUps) staticData.followUps = {};\nconst data = $input.first().json.body || $input.first().json;\nconst threadId = data.thread_id || data.subject || ('thread_' + Date.now());\nstaticData.followUps[threadId] = {\n  sender: data.recipient_name || data.sender || 'Unknown',\n  subject: data.subject || 'No subject',\n  sent_date: data.sent_date || new Date().toISOString(),\n  thread_id: threadId\n};\nreturn [{ json: { stored: true, thread_id: threadId, total_tracked: Object.keys(staticData.followUps).length } }];"
+      }
+    },
+    {
+      "id": "76a752c0-db2c-44cc-a8d0-971b10e95fab",
+      "name": "Daily 5 PM Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        500
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 17,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bcf7d235-f703-4efb-ad37-05dd78169383",
+      "name": "Check Overdue Follow-Ups",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst followUps = staticData.followUps || {};\nconst now = new Date();\nconst reminders = [];\nconst escalated = [];\n\nfor (const [threadId, entry] of Object.entries(followUps)) {\n  const sentDate = new Date(entry.sent_date);\n  const ageHours = (now - sentDate) / (1000 * 60 * 60);\n  const ageDays = Math.floor(ageHours / 24);\n  if (ageHours >= 168) {\n    escalated.push({ ...entry, age_days: ageDays, status: 'escalated' });\n  } else if (ageHours >= 48) {\n    reminders.push({ ...entry, age_days: ageDays, status: 'reminder' });\n  }\n}\n\nconst allItems = [...reminders, ...escalated];\nvar message = '';\nif (allItems.length > 0) {\n  var lines = ['Waiting on replies - ' + allItems.length + ' threads:'];\n  for (var i = 0; i < allItems.length; i++) {\n    var item = allItems[i];\n    var prefix = item.status === 'escalated' ? 'ESCALATED ' : '';\n    lines.push(prefix + item.sender + ' re: ' + item.subject + ' - sent ' + item.age_days + ' days ago');\n  }\n  message = lines.join('\\n');\n}\n\nreturn [{ json: {\n  has_reminders: allItems.length > 0,\n  reminder_count: allItems.length,\n  reminders: reminders,\n  escalated: escalated,\n  total_tracked: Object.keys(followUps).length,\n  slack_message: message\n} }];"
+      }
+    },
+    {
+      "id": "cf4f948f-ce5c-4f35-bb2c-710bfce74eaa",
+      "name": "Has Pending Reminders",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        760,
+        500
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.has_reminders }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a0a85794-6847-49d0-b973-6afedb9ad15d",
+      "name": "Log: Slack DM Follow-Up Reminder",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1000,
+        400
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm_reminder\", \"reminder_count\": $json.reminder_count, \"would_send\": $json.slack_message, \"message\": \"Would send follow-up reminder Slack DM with \" + $json.reminder_count + \" items\"} }}"
+      }
+    },
+    {
+      "id": "b1d234bd-1f97-4d11-8f2d-6dce449a915b",
+      "name": "No Reminders Due",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        600
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Receive Follow-Up from WF1": {
+      "main": [
+        [
+          {
+            "node": "Store in Static Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 5 PM Check": {
+      "main": [
+        [
+          {
+            "node": "Check Overdue Follow-Ups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Overdue Follow-Ups": {
+      "main": [
+        [
+          {
+            "node": "Has Pending Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Pending Reminders": {
+      "main": [
+        [
+          {
+            "node": "Log: Slack DM Follow-Up Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Reminders Due",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "f9061bed-ec2e-4e03-88ce-65ebf2b41f16",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-05T22:06:52.388Z",
+      "createdAt": "2026-05-05T22:06:52.388Z",
+      "role": "workflow:owner",
+      "workflowId": "07JQoukoPdg9dGA1",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
