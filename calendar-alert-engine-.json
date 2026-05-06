@@ -1,0 +1,189 @@
+{
+  "updatedAt": "2026-05-05T22:06:52.712Z",
+  "createdAt": "2026-05-05T22:06:52.712Z",
+  "id": "pGK6nR9vJdbiGZJZ",
+  "name": "Calendar Alert Engine",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "ddac5f68-744a-44d1-8d07-7c56f00965e0",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        400
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ca189965-3edf-49ab-aeae-16ada96ce7ef",
+      "name": "Placeholder: Google Calendar API",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        400
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"items\": [], \"note\": \"Replace this node with Google Calendar API call once OAuth is configured. GET events for next 30 minutes.\"}"
+      }
+    },
+    {
+      "id": "284ceb12-76e5-426b-a381-de8cc0f14135",
+      "name": "Check Events and Generate Alerts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.alerted) staticData.alerted = {};\n\nconst sampleEvents = [\n  {\n    id: 'evt_sample_1',\n    summary: 'AQI Pipeline Review',\n    start: { dateTime: new Date(Date.now() + 14 * 60 * 1000).toISOString() },\n    end: { dateTime: new Date(Date.now() + 74 * 60 * 1000).toISOString() },\n    attendees: [{ email: 'nelson.torres@adquadrant.com' }, { email: 'vish@adquadrant.com' }],\n    hangoutLink: 'https://meet.google.com/abc-defg-hij',\n    status: 'confirmed'\n  }\n];\n\nvar events = $input.first().json.items || sampleEvents;\nvar now = new Date();\nvar alerts = [];\n\nfor (var i = 0; i < events.length; i++) {\n  var evt = events[i];\n  if (!evt.start || !evt.start.dateTime) continue;\n  if (evt.status === 'declined') continue;\n  var attendees = evt.attendees || [];\n  var otherAttendees = attendees.filter(function(a) {\n    return a.email !== 'nelson.torres@adquadrant.com';\n  });\n  if (attendees.length > 0 && otherAttendees.length === 0) continue;\n\n  var startTime = new Date(evt.start.dateTime);\n  var endTime = new Date(evt.end.dateTime);\n  var minutesUntilStart = (startTime - now) / (1000 * 60);\n\n  var attendeeNames = otherAttendees.map(function(a) {\n    return a.displayName || a.email.split('@')[0];\n  }).join(', ');\n  var joinLink = evt.hangoutLink || evt.conferenceData?.entryPoints?.[0]?.uri || 'No link';\n\n  var t15Key = 'calendar_alerted_' + evt.id + '_t15';\n  if (minutesUntilStart >= 13 && minutesUntilStart <= 17 && !staticData.alerted[t15Key]) {\n    staticData.alerted[t15Key] = new Date().toISOString();\n    alerts.push({\n      type: 't15',\n      event_id: evt.id,\n      title: evt.summary,\n      start: startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),\n      end: endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),\n      attendees: attendeeNames,\n      join_link: joinLink,\n      message: 'In 15 min: ' + evt.summary + ' | ' + attendeeNames + ' | ' + joinLink\n    });\n  }\n\n  var t1Key = 'calendar_alerted_' + evt.id + '_t1';\n  if (minutesUntilStart >= 0 && minutesUntilStart <= 2 && !staticData.alerted[t1Key]) {\n    staticData.alerted[t1Key] = new Date().toISOString();\n    alerts.push({\n      type: 't1',\n      event_id: evt.id,\n      title: evt.summary,\n      join_link: joinLink,\n      message: 'Starting now: ' + evt.summary + ' | ' + joinLink\n    });\n  }\n}\n\nvar dayAgo = Date.now() - 24 * 60 * 60 * 1000;\nfor (var key in staticData.alerted) {\n  if (new Date(staticData.alerted[key]).getTime() < dayAgo) {\n    delete staticData.alerted[key];\n  }\n}\n\nreturn [{ json: {\n  has_alerts: alerts.length > 0,\n  alert_count: alerts.length,\n  alerts: alerts,\n  events_checked: events.length\n} }];"
+      }
+    },
+    {
+      "id": "29fe488f-2bfd-4815-829f-6056735b7e49",
+      "name": "Has Alerts to Send",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1020,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.has_alerts }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c65e7b2c-131f-442f-b767-9023b8db7eee",
+      "name": "Log: Slack DM Calendar Alerts",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1300,
+        300
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm_calendar_alerts\", \"alert_count\": $json.alert_count, \"alerts\": $json.alerts, \"events_checked\": $json.events_checked} }}"
+      }
+    },
+    {
+      "id": "0ca3df95-c7b1-4135-a3a6-467786bec826",
+      "name": "No Alerts",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        500
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Placeholder: Google Calendar API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placeholder: Google Calendar API": {
+      "main": [
+        [
+          {
+            "node": "Check Events and Generate Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Events and Generate Alerts": {
+      "main": [
+        [
+          {
+            "node": "Has Alerts to Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Alerts to Send": {
+      "main": [
+        [
+          {
+            "node": "Log: Slack DM Calendar Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "53346fa9-f5e0-4043-9cf2-266889a32c7b",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-05T22:06:52.714Z",
+      "createdAt": "2026-05-05T22:06:52.714Z",
+      "role": "workflow:owner",
+      "workflowId": "pGK6nR9vJdbiGZJZ",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
