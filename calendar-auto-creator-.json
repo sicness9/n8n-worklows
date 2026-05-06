@@ -1,0 +1,249 @@
+{
+  "updatedAt": "2026-05-05T22:06:52.602Z",
+  "createdAt": "2026-05-05T22:06:52.602Z",
+  "id": "giKSTkXsFWU0LDFd",
+  "name": "Calendar Auto-Creator",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "89f45b30-a65e-4e65-9b56-927988e0d539",
+      "name": "Receive Scheduling Signal",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        400
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "calendar-auto-creator",
+        "responseMode": "onReceived"
+      },
+      "webhookId": "ebfa1406-e26e-4ca1-a0f3-67a588973825"
+    },
+    {
+      "id": "ade681ea-9f0e-42ca-9cfc-84c8ebd48f1c",
+      "name": "Build Calendar Draft Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst promptLines = [\n  '# Calendar Event Drafter',\n  '',\n  'Extract calendar event details from the content below.',\n  '',\n  '## Step 1: Detect Intent Level',\n  '- explicit: Specific date + time stated (Tuesday May 7 at 2pm)',\n  '- proposed: Multiple options offered (Tuesday or Wednesday)',\n  '- soft: Vague scheduling intent, no time (sync soon, book some time)',\n  '  Only draft if high-signal: external client, AJ, or deadline mentioned',\n  '- null: Soft signal with no urgency -- return null, do not draft',\n  '',\n  '## Step 2: Extract Event Details',\n  '- title: Short meeting title, infer from topic if not stated',\n  '- start_datetime: ISO 8601, resolve relative dates using current_date',\n  '- end_datetime: Calculate from duration. Default: +30min for calls, +1h for meetings',\n  '- attendees: From participants + anyone mentioned',\n  '- location: Google Meet/Zoom link, address, or null',\n  '- description: One sentence on meeting purpose',\n  '',\n  '## Return JSON',\n  'Return ONLY valid JSON:',\n  '{\"intent_level\": \"explicit|proposed|soft|null\",',\n  '\"event\": {\"title\": \"str\", \"start_datetime\": \"ISO|null\",',\n  '\"end_datetime\": \"ISO|null\", \"attendees\": [], \"location\": \"str|null\",',\n  '\"description\": \"str\"},',\n  '\"slack_confirmation_message\": \"str\",',\n  '\"alternatives\": [\"str\"]}',\n  '',\n  'If intent_level is null:',\n  '{\"intent_level\": \"null\", \"event\": null, \"slack_confirmation_message\": null, \"alternatives\": []}'\n];\nconst systemPrompt = promptLines.join('\\n');\nvar content = input.content || input.body || input.email_body || '';\nvar participants = input.participants || input.attendees || [];\nvar sourceType = input.source_type || 'email';\nvar currentDate = new Date().toISOString().split('T')[0];\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Source Type: ' + sourceType + '\\nCurrent Date: ' + currentDate +\n    '\\nParticipants: ' + JSON.stringify(participants) +\n    '\\n\\nContent:\\n' + content\n  }]\n}}];"
+      }
+    },
+    {
+      "id": "0b254f66-a41d-40ef-99bd-386fe39bfad1",
+      "name": "Draft via Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        740,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}"
+      }
+    },
+    {
+      "id": "ff8ac85b-475f-49f1-9cb9-22009212a11a",
+      "name": "Parse Calendar Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response = $input.first().json;\nlet parsed;\ntry {\n  const text = response.content[0].text;\n  parsed = JSON.parse(text);\n} catch (e) {\n  parsed = { intent_level: 'null', event: null, slack_confirmation_message: null, alternatives: [] };\n}\nreturn [{ json: parsed }];"
+      }
+    },
+    {
+      "id": "eca419a3-79e5-426a-a4e3-b1624be02a25",
+      "name": "Has Scheduling Intent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1220,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.intent_level }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "226c70bb-b207-4d64-82b8-064dbc53403d",
+      "name": "Log: Slack DM Calendar Confirmation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1500,
+        300
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm_calendar_confirm\", \"intent_level\": $json.intent_level, \"event_title\": $json.event?.title || \"N/A\", \"would_send\": $json.slack_confirmation_message || \"No message\", \"event_details\": $json.event, \"alternatives\": $json.alternatives} }}"
+      }
+    },
+    {
+      "id": "adc4e08d-09c3-45bb-a0c1-cdc6bb4519a2",
+      "name": "Placeholder: Create Google Calendar Event",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "4843de4e-dec6-4006-8ebd-e54bf7e36d72",
+      "name": "No Scheduling Intent",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        500
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Receive Scheduling Signal": {
+      "main": [
+        [
+          {
+            "node": "Build Calendar Draft Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Calendar Draft Request": {
+      "main": [
+        [
+          {
+            "node": "Draft via Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft via Claude": {
+      "main": [
+        [
+          {
+            "node": "Parse Calendar Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Calendar Draft": {
+      "main": [
+        [
+          {
+            "node": "Has Scheduling Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Scheduling Intent": {
+      "main": [
+        [
+          {
+            "node": "Log: Slack DM Calendar Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Scheduling Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log: Slack DM Calendar Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Placeholder: Create Google Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "76df707f-ab08-4028-9fbd-1eea2f87de11",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-05T22:06:52.605Z",
+      "createdAt": "2026-05-05T22:06:52.605Z",
+      "role": "workflow:owner",
+      "workflowId": "giKSTkXsFWU0LDFd",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
