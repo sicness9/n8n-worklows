@@ -1,0 +1,206 @@
+{
+  "updatedAt": "2026-05-05T22:06:52.817Z",
+  "createdAt": "2026-05-05T22:06:52.817Z",
+  "id": "V9nBJmspHOAo5MU5",
+  "name": "Morning Brief Push",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "19a56281-dec4-4231-bd4b-d36a8e9c4f59",
+      "name": "Weekdays 7 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        400
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "triggerAtHour": 7,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c476cbc8-99c3-4504-9bd6-675f7a2c94ed",
+      "name": "Placeholder: Asana Slack Gmail Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        400
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"asana\": {\"tasks_due_today\": [\"Review pixel setup for ClientX\"], \"overdue\": [], \"urgent\": [\"AQI pipeline sync\"]}, \"slack\": {\"unread_dms\": [\"Vish: BigQuery schema question\"], \"mentions\": [\"Lindsay tagged you in CP standup\"]}, \"gmail\": {\"action_required\": [\"AJ re: pixel audit\"], \"unread_count\": 12}, \"note\": \"Replace with real Asana/Slack/Gmail API calls when MCPs are connected\"}"
+      }
+    },
+    {
+      "id": "a5fe7aa0-baa9-41e8-ae86-679bfe91fd0e",
+      "name": "Build Brief Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "var today = new Date();\nvar dateStr = today.toISOString().split('T')[0];\nvar dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];\n\nvar asanaData = $input.first().json.asana || { tasks_due_today: [], overdue: [], urgent: [] };\nvar slackData = $input.first().json.slack || { unread_dms: [], mentions: [] };\nvar gmailData = $input.first().json.gmail || { action_required: [], unread_count: 0 };\n\nvar promptLines = [\n  '# Morning Briefing',\n  '',\n  'Generate a concise morning briefing for Nelson Torres at AdQuadrant.',\n  'Today is ' + dayName + ', ' + dateStr + '.',\n  '',\n  '## Data Sources',\n  '',\n  '### Asana Tasks',\n  JSON.stringify(asanaData),\n  '',\n  '### Slack (last 24h)',\n  JSON.stringify(slackData),\n  '',\n  '### Gmail',\n  JSON.stringify(gmailData),\n  '',\n  '## Output Format',\n  '',\n  '### Needs Action Today',\n  'Ranked by urgency + effort. Include source and brief context.',\n  '',\n  '### On Your Radar',\n  'Due soon, waiting on others, FYI threads worth knowing.',\n  '',\n  '### Inbox Summary',\n  'Slack + email items condensed. Paraphrase, never verbatim.',\n  '',\n  '## Rules',\n  '- Keep under 40 lines total',\n  '- Do not list completed tasks',\n  '- If nothing is urgent, say so',\n  '- Cross-reference Slack/email threads connected to Asana tasks'\n];\nvar systemPrompt = promptLines.join('\\n');\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 2048,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Generate the morning briefing for ' + dayName + ' ' + dateStr + '.'\n  }]\n}}];"
+      }
+    },
+    {
+      "id": "73174036-b27e-4ed8-9fa9-86fc1f980c34",
+      "name": "Generate Brief via Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1060,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}"
+      }
+    },
+    {
+      "id": "1ebabddc-269e-43ab-bd46-efeec15fc9fa",
+      "name": "Parse Brief Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response = $input.first().json;\nlet briefText;\ntry {\n  briefText = response.content[0].text;\n} catch (e) {\n  briefText = 'Error generating brief: ' + e.message;\n}\nreturn [{ json: { brief: briefText, generated_at: new Date().toISOString() } }];"
+      }
+    },
+    {
+      "id": "78ad31c6-1a8b-4a4e-8efe-420fd314669a",
+      "name": "Log: Slack DM Morning Brief",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1620,
+        400
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm_morning_brief\", \"generated_at\": $json.generated_at, \"would_send\": $json.brief} }}"
+      }
+    }
+  ],
+  "connections": {
+    "Weekdays 7 AM": {
+      "main": [
+        [
+          {
+            "node": "Placeholder: Asana Slack Gmail Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placeholder: Asana Slack Gmail Data": {
+      "main": [
+        [
+          {
+            "node": "Build Brief Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Brief Request": {
+      "main": [
+        [
+          {
+            "node": "Generate Brief via Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Brief via Claude": {
+      "main": [
+        [
+          {
+            "node": "Parse Brief Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Brief Response": {
+      "main": [
+        [
+          {
+            "node": "Log: Slack DM Morning Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "81974be6-c1de-4e5f-8d8c-ac8b9bd702ae",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-05T22:06:52.818Z",
+      "createdAt": "2026-05-05T22:06:52.818Z",
+      "role": "workflow:owner",
+      "workflowId": "V9nBJmspHOAo5MU5",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
