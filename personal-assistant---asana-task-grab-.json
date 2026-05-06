@@ -1,0 +1,142 @@
+{
+  "updatedAt": "2026-05-04T17:33:52.360Z",
+  "createdAt": "2026-05-04T17:31:07.264Z",
+  "id": "NL8DoX4nIgBjWmqk",
+  "name": "Personal Assistant - Asana Task Grab",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "oAuth2"
+      },
+      "type": "n8n-nodes-base.asanaTrigger",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        96
+      ],
+      "id": "ccc2ab88-bb95-4434-bef5-a006bcd42377",
+      "name": "Asana Trigger",
+      "webhookId": "0dd24005-bb7b-43f6-a949-bd11f3bbfe5b",
+      "credentials": {
+        "asanaOAuth2Api": {
+          "id": "IhJhkNbbtfrtt5U9",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "36eb38e6-0a7d-487a-8137-40745d3d1729",
+              "leftValue": "={{ $json.user.gid }}",
+              "rightValue": "1214004425613031",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "2e825c39-323b-4dde-82b8-2563d758918a",
+              "leftValue": "={{ $json.resource.resource_type }}",
+              "rightValue": "task",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -208,
+        96
+      ],
+      "id": "d5090dd4-cb76-4653-9604-355a19cad3f8",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8765/invoke",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"command\": \"on-assign\",\n  \"payload\": {\"arg\": \"{{ $json.resource.gid }}\"}\n}",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c8787d69-9d89-4961-88bd-3a6f31c23c27",
+      "name": "HTTP Request"
+    }
+  ],
+  "connections": {
+    "Asana Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "af16be84-3b47-460f-818a-73b711a85dec",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-04T17:31:07.271Z",
+      "createdAt": "2026-05-04T17:31:07.271Z",
+      "role": "workflow:owner",
+      "workflowId": "NL8DoX4nIgBjWmqk",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
