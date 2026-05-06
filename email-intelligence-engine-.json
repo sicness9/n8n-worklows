@@ -1,0 +1,480 @@
+{
+  "updatedAt": "2026-05-05T22:06:52.265Z",
+  "createdAt": "2026-05-05T22:06:52.265Z",
+  "id": "QlG1fDHb6qpVX4xa",
+  "name": "Email Intelligence Engine",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "4373dfec-b382-4b08-8fc1-656d9ca76361",
+      "name": "New Email Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        400
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-intelligence",
+        "responseMode": "onReceived"
+      },
+      "webhookId": "b07bf2d2-dd86-4ad4-bb76-7eda69716486"
+    },
+    {
+      "id": "07e557d5-4bb4-430b-884d-dd78e25191f5",
+      "name": "Build Classification Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const email = $input.first().json.body || $input.first().json;\nconst promptLines = [\n  '# Email Classifier',\n  '',\n  'Classify the email below. Apply the FIRST matching rule in priority order.',\n  '',\n  '### 1. TRANSCRIPT',\n  'Match if: sender domain is fireflies.ai/otter.ai/zoom.us/fathom.video/grain.com,',\n  'or sender contains notetaker@/transcript@/recording@,',\n  'or sender is meet-recordings-noreply@google.com,',\n  'or subject contains transcript/recording/meeting notes/meeting summary,',\n  'or body > 1500 chars AND subject mentions meeting/call/sync/standup/review/demo.',\n  'No additional extraction needed.',\n  '',\n  '### 2. NEWSLETTER',\n  'Match if: headers contain List-Unsubscribe, or sender is no-reply/noreply/newsletter/marketing,',\n  'or body contains unsubscribe/view in browser/email preferences.',\n  'Extract: {sender_name, sender_email, is_new_sender: boolean}',\n  '',\n  '### 3. SPAM',\n  'Match if: unknown sender + no existing relationship, phishing/lottery/prize language.',\n  'No extraction.',\n  '',\n  '### 4. SCHEDULING',\n  'Match if: explicit times mentioned, scheduling phrases, calendar/meeting links.',\n  'Extract: {proposed_times: [], attendees: [], topic, meeting_link}',\n  '',\n  '### 5. WAITING_FOR_REPLY',\n  'Match if: thread_context shows Nelson sent the last message and no reply yet.',\n  'Extract: {recipient_name, recipient_email, subject, sent_date, thread_id}',\n  '',\n  '### 6. ACTION_REQUIRED',\n  'Match if: directly addressed to Nelson with question/request requiring response.',\n  'Extract: {action_summary: one sentence of what Nelson must DO,',\n  'sender_name: first name, deadline: date or null,',\n  'urgency: high if from AJ/Vish/Hailey/Lindsay or deadline within 24h else normal}',\n  '',\n  '### 7. FYI',\n  'Everything else: informational, receipts, CC announcements, system notifications.',\n  'Extract: {subject, sender_name}',\n  '',\n  '## Return Format',\n  'Return ONLY valid JSON, no preamble:',\n  '{\"class\": \"CLASS_NAME\", \"data\": {class-specific fields}}'\n];\nconst systemPrompt = promptLines.join('\\n');\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'From: ' + (email.from || '') + '\\nSubject: ' + (email.subject || '') +\n    '\\nBody: ' + (email.body || '') + '\\nThread Context: ' + (email.thread_context || 'None')\n  }]\n}}];"
+      }
+    },
+    {
+      "id": "51652bce-70e5-41b9-9690-75ab8f1754e6",
+      "name": "Classify via Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        740,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}"
+      }
+    },
+    {
+      "id": "e509582f-7594-448c-9807-42e623bdec23",
+      "name": "Parse Classification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response = $input.first().json;\nconst originalEmail = $('New Email Webhook').first().json.body || $('New Email Webhook').first().json;\nlet parsed;\ntry {\n  const text = response.content[0].text;\n  parsed = JSON.parse(text);\n} catch (e) {\n  parsed = { class: 'UNKNOWN', data: { error: e.message } };\n}\nparsed.email = { from: originalEmail.from || '', subject: originalEmail.subject || '' };\nreturn [{ json: parsed }];"
+      }
+    },
+    {
+      "id": "a41a40df-c606-40f9-a92e-de290be310b2",
+      "name": "Route by Email Class",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1220,
+        400
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.class }}",
+                    "rightValue": "TRANSCRIPT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "TRANSCRIPT"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.class }}",
+                    "rightValue": "NEWSLETTER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "NEWSLETTER"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.class }}",
+                    "rightValue": "SPAM",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "SPAM"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.class }}",
+                    "rightValue": "SCHEDULING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "SCHEDULING"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.class }}",
+                    "rightValue": "WAITING_FOR_REPLY",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "WAITING_FOR_REPLY"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.class }}",
+                    "rightValue": "ACTION_REQUIRED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "ACTION_REQUIRED"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.class }}",
+                    "rightValue": "FYI",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "FYI"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "UNKNOWN"
+        }
+      }
+    },
+    {
+      "id": "0361a28a-a7d2-4f6d-9cd8-72ce5c1f88dc",
+      "name": "Log: Transcript to WF3",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1520,
+        -100
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"dry_run\": true, \"action\": \"trigger_transcript_processor\", \"message\": \"Would trigger Workflow 3 with email body\"}"
+      }
+    },
+    {
+      "id": "51528424-f0f1-4786-9fd9-3254a0d55f69",
+      "name": "Log: Newsletter Label and Archive",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1520,
+        50
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"label_and_archive\", \"label\": \"newsletter\", \"is_new_sender\": $json.data?.is_new_sender || false, \"message\": \"Would apply Gmail label newsletter and archive\"} }}"
+      }
+    },
+    {
+      "id": "7d456741-74fa-4319-92e8-3822652da3a4",
+      "name": "Log: Spam to Trash",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1520,
+        200
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"dry_run\": true, \"action\": \"move_to_trash\", \"message\": \"Would move email to Gmail trash\"}"
+      }
+    },
+    {
+      "id": "e600b259-a74b-404e-9c7f-dcbdb54cd9b4",
+      "name": "Log: Scheduling to WF4",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1520,
+        350
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"dry_run\": true, \"action\": \"trigger_calendar_creator\", \"message\": \"Would trigger Workflow 4 with scheduling data\"}"
+      }
+    },
+    {
+      "id": "f0525702-2203-4aa5-8760-7ba60c129c94",
+      "name": "Log: Store Follow-Up",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1520,
+        500
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"store_follow_up\", \"recipient\": $json.data?.recipient_name || \"unknown\", \"subject\": $json.email?.subject || \"N/A\", \"message\": \"Would store in static data for daily 5 PM check\"} }}"
+      }
+    },
+    {
+      "id": "261a95f9-54b4-4928-881e-9767bd1968cd",
+      "name": "Log: Slack DM Action Required",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1520,
+        650
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm\", \"urgency\": $json.data?.urgency || \"normal\", \"would_send\": \"Action needed: \" + ($json.data?.sender_name || \"Unknown\") + \" | Subject: \" + ($json.email?.subject || \"N/A\") + \" | \" + ($json.data?.action_summary || \"N/A\")} }}"
+      }
+    },
+    {
+      "id": "42a42dcc-b026-4a83-8540-c40a3596f663",
+      "name": "Log: FYI Label",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1520,
+        800
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"dry_run\": true, \"action\": \"label_fyi_brief\", \"label\": \"fyi-brief\", \"message\": \"Would apply Gmail label fyi-brief\"}"
+      }
+    }
+  ],
+  "connections": {
+    "New Email Webhook": {
+      "main": [
+        [
+          {
+            "node": "Build Classification Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Classification Request": {
+      "main": [
+        [
+          {
+            "node": "Classify via Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify via Claude": {
+      "main": [
+        [
+          {
+            "node": "Parse Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Classification": {
+      "main": [
+        [
+          {
+            "node": "Route by Email Class",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Email Class": {
+      "main": [
+        [
+          {
+            "node": "Log: Transcript to WF3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log: Newsletter Label and Archive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log: Spam to Trash",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log: Scheduling to WF4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log: Store Follow-Up",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log: Slack DM Action Required",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log: FYI Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "cac0ba78-7b66-4d77-a033-a0d3f98ac1ba",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-05T22:06:52.268Z",
+      "createdAt": "2026-05-05T22:06:52.268Z",
+      "role": "workflow:owner",
+      "workflowId": "QlG1fDHb6qpVX4xa",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
