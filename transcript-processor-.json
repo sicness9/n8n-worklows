@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-05T22:06:52.498Z",
+  "updatedAt": "2026-05-06T21:03:51.348Z",
   "createdAt": "2026-05-05T22:06:52.498Z",
   "id": "BEbTiKeubM88NGOO",
   "name": "Transcript Processor",
@@ -65,6 +65,12 @@
         "contentType": "json",
         "specifyBody": "json",
         "jsonBody": "={{ $json }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qjdLurgn1OANVO3L",
+          "name": "Header Auth account"
+        }
       }
     },
     {
@@ -116,17 +122,32 @@
     },
     {
       "id": "e99e95c0-9b13-4037-aab0-8d5448895904",
-      "name": "Log: Processing Summary",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "name": "Processing Summary DM",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
       "position": [
         1340,
         200
       ],
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"transcript_processed\", \"meeting\": $json.meeting_title, \"high_tasks_count\": $json.high_tasks?.length || 0, \"medium_held\": $json.medium_held || 0, \"would_send_slack\": $json.slack_message, \"would_create_asana_tasks\": $json.high_tasks} }}"
-      }
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "value": "U0AS1DLUKQV",
+          "__rl": true,
+          "mode": "id"
+        },
+        "text": "={{ '\\ud83d\\udcdd Processed: '+($json.meeting_title||'Meeting')+'\\n\\u2705 Created '+($json.auto_created||0)+' task(s) in Asana'+'\\n\\u23f8\\ufe0f Held '+($json.held_count||0)+' item(s) for 7 PM digest' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Slack account"
+        }
+      },
+      "webhookId": "e8268830-c149-4cc3-a872-ec0194cefa4d"
     },
     {
       "id": "1c31b16f-8dbf-41b0-bbd9-53e3c73d3ea8",
@@ -197,17 +218,32 @@
     },
     {
       "id": "6c60dd04-0e0f-4fc3-97e7-8d80fa8568b8",
-      "name": "Log: 7 PM Digest DM",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "name": "7 PM Digest DM DM",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
       "position": [
         980,
         500
       ],
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm_digest\", \"item_count\": $json.count, \"would_send\": $json.digest_message} }}"
-      }
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "value": "U0AS1DLUKQV",
+          "__rl": true,
+          "mode": "id"
+        },
+        "text": "={{ '\\ud83d\\udcec '+($json.held_count||0)+' item(s) held from today\\'s transcripts:\\n\\n'+($json.held_items||[]).map(function(item,i){return (i+1)+'. '+item.title+' (from: '+item.meeting+')';}).join('\\n')+'\\n\\nReply \\\"create 1, 2\\\" or \\\"skip all\\\". Auto-expires in 24h.' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Slack account"
+        }
+      },
+      "webhookId": "1c6eff33-7de7-48b7-adee-d0f1145606fa"
     },
     {
       "id": "e10b9e0e-7867-4baf-ac64-b987959411a4",
@@ -270,7 +306,7 @@
       "main": [
         [
           {
-            "node": "Log: Processing Summary",
+            "node": "Processing Summary DM",
             "type": "main",
             "index": 0
           }
@@ -303,7 +339,7 @@
       "main": [
         [
           {
-            "node": "Log: 7 PM Digest DM",
+            "node": "7 PM Digest DM DM",
             "type": "main",
             "index": 0
           }
@@ -326,7 +362,7 @@
   "staticData": null,
   "meta": null,
   "pinData": null,
-  "versionId": "fc430706-8f15-44e2-a0f2-c51f619c0c09",
+  "versionId": "75f7df4c-468b-4918-af32-da26c450cc3a",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
