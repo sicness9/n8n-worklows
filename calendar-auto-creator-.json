@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-05T22:06:52.602Z",
+  "updatedAt": "2026-05-06T21:03:49.992Z",
   "createdAt": "2026-05-05T22:06:52.602Z",
   "id": "giKSTkXsFWU0LDFd",
   "name": "Calendar Auto-Creator",
@@ -65,6 +65,12 @@
         "contentType": "json",
         "specifyBody": "json",
         "jsonBody": "={{ $json }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qjdLurgn1OANVO3L",
+          "name": "Header Auth account"
+        }
       }
     },
     {
@@ -114,28 +120,67 @@
     },
     {
       "id": "226c70bb-b207-4d64-82b8-064dbc53403d",
-      "name": "Log: Slack DM Calendar Confirmation",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "name": "Calendar Confirmation DM",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
       "position": [
         1500,
         300
       ],
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm_calendar_confirm\", \"intent_level\": $json.intent_level, \"event_title\": $json.event?.title || \"N/A\", \"would_send\": $json.slack_confirmation_message || \"No message\", \"event_details\": $json.event, \"alternatives\": $json.alternatives} }}"
-      }
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "value": "U0AS1DLUKQV",
+          "__rl": true,
+          "mode": "id"
+        },
+        "text": "={{ '\\ud83d\\udcc5 Want to create a calendar event?\\n\\n\\ud83d\\udccc '+($json.title||'Untitled')+'\\n\\u23f0 '+($json.proposed_time||'TBD')+'\\n\\ud83d\\udc65 '+($json.attendees||'TBD')+($json.link?'\\n\\ud83d\\udd17 '+$json.link:'')+'\\n\\ud83d\\udcdd Source: '+($json.source||'Email/Slack')+'\\n\\nReply: confirm | edit | skip' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Slack account"
+        }
+      },
+      "webhookId": "a82eff81-ce45-4c3d-a44a-72da46fc8c95"
     },
     {
       "id": "adc4e08d-09c3-45bb-a0c1-cdc6bb4519a2",
-      "name": "Placeholder: Create Google Calendar Event",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
+      "name": "Create Google Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.2,
       "position": [
         1780,
         300
       ],
-      "parameters": {}
+      "parameters": {
+        "operation": "create",
+        "calendar": {
+          "__rl": true,
+          "value": "nelson.torres@adquadrant.com",
+          "mode": "id"
+        },
+        "start": "={{ $json.event.start_datetime }}",
+        "end": "={{ $json.event.end_datetime }}",
+        "additionalFields": {
+          "summary": "={{ $json.event.title }}",
+          "description": "={{ $json.event.description }}",
+          "location": "={{ $json.event.location }}",
+          "attendeesUi": {
+            "attendeesValues": "={{ ($json.event.attendees || []).map(a => typeof a === 'string' ? {email: a} : {email: a.email || a}) }}"
+          }
+        },
+        "resource": "event"
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "37dh7UZDNrM2RQ4L",
+          "name": "Google Calendar account"
+        }
+      }
     },
     {
       "id": "4843de4e-dec6-4006-8ebd-e54bf7e36d72",
@@ -198,7 +243,7 @@
       "main": [
         [
           {
-            "node": "Log: Slack DM Calendar Confirmation",
+            "node": "Calendar Confirmation DM",
             "type": "main",
             "index": 0
           }
@@ -212,11 +257,11 @@
         ]
       ]
     },
-    "Log: Slack DM Calendar Confirmation": {
+    "Calendar Confirmation DM": {
       "main": [
         [
           {
-            "node": "Placeholder: Create Google Calendar Event",
+            "node": "Create Google Calendar Event",
             "type": "main",
             "index": 0
           }
@@ -232,7 +277,7 @@
   "staticData": null,
   "meta": null,
   "pinData": null,
-  "versionId": "76df707f-ab08-4028-9fbd-1eea2f87de11",
+  "versionId": "73bb8a35-5c5b-4e37-b5fe-6759bc5fe94f",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
