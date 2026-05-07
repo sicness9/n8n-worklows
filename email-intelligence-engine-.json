@@ -1,58 +1,63 @@
 {
-  "updatedAt": "2026-05-05T22:06:52.265Z",
+  "updatedAt": "2026-05-06T22:20:56.349Z",
   "createdAt": "2026-05-05T22:06:52.265Z",
   "id": "QlG1fDHb6qpVX4xa",
   "name": "Email Intelligence Engine",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "is:unread -label:iris-reviewed"
+        },
+        "options": {}
+      },
       "id": "4373dfec-b382-4b08-8fc1-656d9ca76361",
-      "name": "New Email Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
       "position": [
         240,
-        400
+        1152
       ],
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "email-intelligence",
-        "responseMode": "onReceived"
-      },
-      "webhookId": "b07bf2d2-dd86-4ad4-bb76-7eda69716486"
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "BioUrrORr4sw8djI",
+          "name": "Gmail account"
+        }
+      }
     },
     {
+      "parameters": {
+        "jsCode": "const email = $('Gmail Trigger').first().json;\n\nconst labelContext = `Existing labels (use exact names):\n  - AdQuadrant\n  - TikTok\n  - Asana\n  - Asana/Task Alerts\n  - Asana/Assignments\n  - Operations\n  - Google\n  - Google/Alerts\n  - Meta\n  - Meta/Updates\n  - Meta/Receipts\n  - Forwarded for James\n  - Affiliate Email Group`;\n\nconst promptLines = [\n  '# Email Classifier for Iris (Nelson Torres, AdQuadrant)',\n  '',\n  'Classify the email and decide organizational actions. Apply the FIRST matching class rule.',\n  '',\n  '### 1. TRANSCRIPT',\n  'Match if: sender domain is fireflies.ai/otter.ai/zoom.us/fathom.video/grain.com,',\n  'or sender contains notetaker@/transcript@/recording@,',\n  'or sender is meet-recordings-noreply@google.com,',\n  'or subject contains: transcript/recording/meeting notes/meeting summary,',\n  'or body > 1500 chars AND subject mentions meeting/call/sync/standup/review/demo.',\n  '',\n  '### 2. ACTION_REQUIRED',\n  'Match if ANY of:',\n  '- Email directly addressed to Nelson requiring a decision, response, or task.',\n  '- A named individual invited Nelson to a platform/tool/team (e.g. \"X invited you to join...\").',\n  '- Access grant, approval request, partner request, or account action triggered by a specific person.',\n  '- Invite link present that expires or requires acceptance.',\n  'Extract: {action_summary: one sentence of what Nelson must DO,',\n  '  sender_name: first name or name of person who triggered it,',\n  '  deadline: date string or null,',\n  '  urgency: \"high\" if from AJ/Vish/Hailey/Lindsay/Daniel or deadline within 24h, else \"normal\"}',\n  '',\n  '### 3. NEWSLETTER',\n  'Match if: mass-send marketing email.',\n  'Strong signals: List-Unsubscribe header present, body contains unsubscribe/view-in-browser/email-preferences.',\n  'Weak signals: no-reply/do-not-reply sender, promotional language.',\n  'EXCEPTION: Do NOT classify as NEWSLETTER if a named individual triggered the email (invite, team add, access grant).',\n  'Extract: {sender_name, sender_email, is_new_sender: boolean}',\n  '',\n  '### 4. SPAM',\n  'Match if: unknown sender + no legitimate context, phishing/lottery/prize language.',\n  'Only classify SPAM if confidence > 95%.',\n  '',\n  '### 5. SCHEDULING',\n  'Match if: explicit date/time proposed, scheduling phrases, calendar/meeting links from a person.',\n  'Extract: {proposed_times: [], attendees: [], topic, meeting_link}',\n  '',\n  '### 6. WAITING_FOR_REPLY',\n  'Match if: Nelson sent the last message in a thread and this is a reply arriving.',\n  'Extract: {recipient_name, recipient_email, subject, thread_id}',\n  '',\n  '### 7. FYI',\n  'Informational, receipts, CC announcements, system notifications, onboarding/welcome emails with no required action.',\n  'Extract: {subject, sender_name}',\n  '',\n  '## Organizational Actions (org)',\n  'After classifying, decide:',\n  '',\n  '**apply_labels**: Array of existing label names to apply. Pick from this list ONLY:',\n  labelContext,\n  'Rules:',\n  '  - AdQuadrant → sender email ends in @adquadrant.com',\n  '  - Meta/Meta/Updates/Meta/Receipts → from Meta, Facebook, Instagram business platforms',\n  '  - TikTok → from TikTok business platforms',\n  '  - Google/Google/Alerts → from Google Ads, Analytics, Search Console, or Google alerts',\n  '  - Asana/Asana/Task Alerts/Asana/Assignments → from Asana',\n  '  - Operations → operational/infrastructure notifications',\n  '  - Apply the most specific sub-label available (e.g. Meta/Receipts over Meta)',\n  '',\n  '**new_label**: null, OR {name: \"Platform/Type\", purpose: \"one line\"} if no existing label fits',\n  '  and this is clearly a recurring category (e.g. \"Shopify/Notifications\", \"LinkedIn/Invites\").',\n  '  Follow the Platform/Type naming convention. Only create when confident it will recur.',\n  '',\n  '**archive**: true if the email has been handled by labeling and does not need to stay in inbox',\n  '  (newsletters, FYI receipts, automated alerts already routed to a label).',\n  '  ACTION_REQUIRED emails are NEVER archived.',\n  '',\n  '**trash**: true ONLY for SPAM class with >95% confidence. Never trash borderline cases.',\n  '',\n  '**note**: null, or one-line note ONLY if creating a new label or making a non-obvious decision.',\n  '',\n  '## Return Format',\n  'Return ONLY valid JSON, no markdown fences:',\n  '{\"class\":\"CLASS\",\"data\":{...},\"org\":{\"apply_labels\":[],\"new_label\":null,\"archive\":false,\"trash\":false,\"note\":null}}'\n];\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  system: promptLines.join('\\n'),\n  messages: [{ role: 'user', content:\n    'From: ' + (email.from || '') +\n    '\\nSubject: ' + (email.subject || '') +\n    '\\nBody:\\n' + (email.textPlain || email.text || email.snippet || '(no body)').slice(0, 3000)\n  }]\n}}];"
+      },
       "id": "07e557d5-4bb4-430b-884d-dd78e25191f5",
       "name": "Build Classification Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        500,
-        400
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "javaScript",
-        "jsCode": "const email = $input.first().json.body || $input.first().json;\nconst promptLines = [\n  '# Email Classifier',\n  '',\n  'Classify the email below. Apply the FIRST matching rule in priority order.',\n  '',\n  '### 1. TRANSCRIPT',\n  'Match if: sender domain is fireflies.ai/otter.ai/zoom.us/fathom.video/grain.com,',\n  'or sender contains notetaker@/transcript@/recording@,',\n  'or sender is meet-recordings-noreply@google.com,',\n  'or subject contains transcript/recording/meeting notes/meeting summary,',\n  'or body > 1500 chars AND subject mentions meeting/call/sync/standup/review/demo.',\n  'No additional extraction needed.',\n  '',\n  '### 2. NEWSLETTER',\n  'Match if: headers contain List-Unsubscribe, or sender is no-reply/noreply/newsletter/marketing,',\n  'or body contains unsubscribe/view in browser/email preferences.',\n  'Extract: {sender_name, sender_email, is_new_sender: boolean}',\n  '',\n  '### 3. SPAM',\n  'Match if: unknown sender + no existing relationship, phishing/lottery/prize language.',\n  'No extraction.',\n  '',\n  '### 4. SCHEDULING',\n  'Match if: explicit times mentioned, scheduling phrases, calendar/meeting links.',\n  'Extract: {proposed_times: [], attendees: [], topic, meeting_link}',\n  '',\n  '### 5. WAITING_FOR_REPLY',\n  'Match if: thread_context shows Nelson sent the last message and no reply yet.',\n  'Extract: {recipient_name, recipient_email, subject, sent_date, thread_id}',\n  '',\n  '### 6. ACTION_REQUIRED',\n  'Match if: directly addressed to Nelson with question/request requiring response.',\n  'Extract: {action_summary: one sentence of what Nelson must DO,',\n  'sender_name: first name, deadline: date or null,',\n  'urgency: high if from AJ/Vish/Hailey/Lindsay or deadline within 24h else normal}',\n  '',\n  '### 7. FYI',\n  'Everything else: informational, receipts, CC announcements, system notifications.',\n  'Extract: {subject, sender_name}',\n  '',\n  '## Return Format',\n  'Return ONLY valid JSON, no preamble:',\n  '{\"class\": \"CLASS_NAME\", \"data\": {class-specific fields}}'\n];\nconst systemPrompt = promptLines.join('\\n');\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'From: ' + (email.from || '') + '\\nSubject: ' + (email.subject || '') +\n    '\\nBody: ' + (email.body || '') + '\\nThread Context: ' + (email.thread_context || 'None')\n  }]\n}}];"
-      }
+        688,
+        1152
+      ]
     },
     {
-      "id": "51652bce-70e5-41b9-9690-75ab8f1754e6",
-      "name": "Classify via Claude",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        740,
-        400
-      ],
       "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
-        "specifyHeaders": "keypair",
         "headerParameters": {
           "parameters": [
             {
@@ -62,37 +67,40 @@
           ]
         },
         "sendBody": true,
-        "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ $json }}"
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "51652bce-70e5-41b9-9690-75ab8f1754e6",
+      "name": "Classify via Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        912,
+        1152
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qjdLurgn1OANVO3L",
+          "name": "Header Auth account"
+        }
       }
     },
     {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst originalEmail = $('Gmail Trigger').first().json;\n\nconst LABEL_MAP = {\n  \"AdQuadrant\": \"Label_1635244963453248173\",\n  \"TikTok\": \"Label_1931679288864972310\",\n  \"Asana\": \"Label_2117505959743628807\",\n  \"Asana/Task Alerts\": \"Label_1407730268915045332\",\n  \"Asana/Assignments\": \"Label_7429247946084843356\",\n  \"Operations\": \"Label_2356661191061945189\",\n  \"Google\": \"Label_4106205777453927081\",\n  \"Google/Alerts\": \"Label_8083929895310398279\",\n  \"Meta\": \"Label_5536474334869364195\",\n  \"Meta/Updates\": \"Label_5499460052848277923\",\n  \"Meta/Receipts\": \"Label_8420736410624747805\",\n  \"Forwarded for James\": \"Label_7066207239495531100\",\n  \"Affiliate Email Group\": \"Label_8145982436135018374\"\n};\n\nlet parsed;\ntry {\n  let text = response.content[0].text;\n  text = text.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\n  parsed = JSON.parse(text);\n} catch (e) {\n  parsed = { class: 'UNKNOWN', data: { error: e.message }, org: {} };\n}\n\n// Resolve apply_labels names → IDs\nconst org = parsed.org || {};\nconst labelNames = org.apply_labels || [];\nconst applyLabelIds = labelNames.map(name => LABEL_MAP[name]).filter(Boolean);\n\nparsed.email = {\n  from: originalEmail.from || '',\n  subject: originalEmail.subject || ''\n};\nparsed.emailId = originalEmail.id;\nparsed.apply_label_ids = applyLabelIds;\n\nreturn [{ json: parsed }];"
+      },
       "id": "e509582f-7594-448c-9807-42e623bdec23",
       "name": "Parse Classification",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        980,
-        400
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "javaScript",
-        "jsCode": "const response = $input.first().json;\nconst originalEmail = $('New Email Webhook').first().json.body || $('New Email Webhook').first().json;\nlet parsed;\ntry {\n  const text = response.content[0].text;\n  parsed = JSON.parse(text);\n} catch (e) {\n  parsed = { class: 'UNKNOWN', data: { error: e.message } };\n}\nparsed.email = { from: originalEmail.from || '', subject: originalEmail.subject || '' };\nreturn [{ json: parsed }];"
-      }
+        1136,
+        1152
+      ]
     },
     {
-      "id": "a41a40df-c606-40f9-a92e-de290be310b2",
-      "name": "Route by Email Class",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.4,
-      "position": [
-        1220,
-        400
-      ],
       "parameters": {
-        "mode": "rules",
         "rules": {
           "values": [
             {
@@ -255,113 +263,325 @@
           "fallbackOutput": "extra",
           "renameFallbackOutput": "UNKNOWN"
         }
-      }
+      },
+      "id": "a41a40df-c606-40f9-a92e-de290be310b2",
+      "name": "Route by Email Class",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1360,
+        384
+      ]
     },
     {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"dry_run\": true, \"action\": \"trigger_transcript_processor\", \"message\": \"Would trigger Workflow 3 with email body\"}",
+        "options": {}
+      },
       "id": "0361a28a-a7d2-4f6d-9cd8-72ce5c1f88dc",
       "name": "Log: Transcript to WF3",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1520,
-        -100
-      ],
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "{\"dry_run\": true, \"action\": \"trigger_transcript_processor\", \"message\": \"Would trigger Workflow 3 with email body\"}"
-      }
+        1584,
+        -96
+      ]
     },
     {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"label_and_archive\", \"label\": \"newsletter\", \"is_new_sender\": $json.data?.is_new_sender || false, \"message\": \"Would apply Gmail label newsletter and archive\"} }}",
+        "options": {}
+      },
       "id": "51528424-f0f1-4786-9fd9-3254a0d55f69",
       "name": "Log: Newsletter Label and Archive",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1520,
-        50
-      ],
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"label_and_archive\", \"label\": \"newsletter\", \"is_new_sender\": $json.data?.is_new_sender || false, \"message\": \"Would apply Gmail label newsletter and archive\"} }}"
-      }
+        1584,
+        96
+      ]
     },
     {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"dry_run\": true, \"action\": \"move_to_trash\", \"message\": \"Would move email to Gmail trash\"}",
+        "options": {}
+      },
       "id": "7d456741-74fa-4319-92e8-3822652da3a4",
       "name": "Log: Spam to Trash",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1520,
-        200
-      ],
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "{\"dry_run\": true, \"action\": \"move_to_trash\", \"message\": \"Would move email to Gmail trash\"}"
-      }
+        1584,
+        288
+      ]
     },
     {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"dry_run\": true, \"action\": \"trigger_calendar_creator\", \"message\": \"Would trigger Workflow 4 with scheduling data\"}",
+        "options": {}
+      },
       "id": "e600b259-a74b-404e-9c7f-dcbdb54cd9b4",
       "name": "Log: Scheduling to WF4",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1520,
-        350
-      ],
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "{\"dry_run\": true, \"action\": \"trigger_calendar_creator\", \"message\": \"Would trigger Workflow 4 with scheduling data\"}"
-      }
+        1584,
+        480
+      ]
     },
     {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"store_follow_up\", \"recipient\": $json.data?.recipient_name || \"unknown\", \"subject\": $json.email?.subject || \"N/A\", \"message\": \"Would store in static data for daily 5 PM check\"} }}",
+        "options": {}
+      },
       "id": "f0525702-2203-4aa5-8760-7ba60c129c94",
       "name": "Log: Store Follow-Up",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1520,
-        500
-      ],
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"store_follow_up\", \"recipient\": $json.data?.recipient_name || \"unknown\", \"subject\": $json.email?.subject || \"N/A\", \"message\": \"Would store in static data for daily 5 PM check\"} }}"
-      }
+        1584,
+        672
+      ]
     },
     {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "value": "U0AS1DLUKQV",
+          "__rl": true,
+          "mode": "id"
+        },
+        "text": "={{ '\\ud83d\\udce7 Action needed: '+($json.from||'Unknown')+'\\nSubject: '+($json.subject||'(no subject)')+'\\n\\u2192 '+($json.action||'Review required') }}",
+        "otherOptions": {}
+      },
       "id": "261a95f9-54b4-4928-881e-9767bd1968cd",
-      "name": "Log: Slack DM Action Required",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "name": "Action Required DM",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
       "position": [
-        1520,
-        650
+        1584,
+        864
       ],
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm\", \"urgency\": $json.data?.urgency || \"normal\", \"would_send\": \"Action needed: \" + ($json.data?.sender_name || \"Unknown\") + \" | Subject: \" + ($json.email?.subject || \"N/A\") + \" | \" + ($json.data?.action_summary || \"N/A\")} }}"
+      "webhookId": "1bc910a5-779e-4f30-82af-de918a3c174d",
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Slack account"
+        }
       }
     },
     {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"dry_run\": true, \"action\": \"label_fyi_brief\", \"label\": \"fyi-brief\", \"message\": \"Would apply Gmail label fyi-brief\"}",
+        "options": {}
+      },
       "id": "42a42dcc-b026-4a83-8540-c40a3596f663",
       "name": "Log: FYI Label",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1520,
-        800
-      ],
+        1584,
+        1056
+      ]
+    },
+    {
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "{\"dry_run\": true, \"action\": \"label_fyi_brief\", \"label\": \"fyi-brief\", \"message\": \"Would apply Gmail label fyi-brief\"}"
-      }
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').first().json.id }}",
+        "labelIds": [
+          "Label_6628771149178182022"
+        ]
+      },
+      "id": "f33f6c24-d1c4-4413-a4c3-1f71196fbac9",
+      "name": "Stamp iris-reviewed",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        464,
+        1152
+      ],
+      "webhookId": "c11fb4c3-0b41-454e-84cf-451d18da0cf8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "BioUrrORr4sw8djI",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.emailId }}",
+        "labelIds": "={{ $json.apply_label_ids }}"
+      },
+      "id": "82fa418a-5e76-49e9-83a1-7919a0aa0c51",
+      "name": "Apply Org Labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        1056
+      ],
+      "webhookId": "be4ef711-5d98-4817-9673-758c2ab3b320",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "BioUrrORr4sw8djI",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Parse Classification').first().json.org.new_label?.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "id": "c1c050a5-e087-4a47-bdc5-b1cbb9383f8d"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c94670f2-362c-46ca-830d-3fad3da9be6c",
+      "name": "Has New Label?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "operation": "create",
+        "name": "={{ $('Parse Classification').first().json.org.new_label.name }}",
+        "options": {}
+      },
+      "id": "84251b33-cd36-4328-a922-aa684db280ff",
+      "name": "Create New Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        1248
+      ],
+      "webhookId": "b80e105e-67f5-4fa4-988d-163f4fc30e53",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "BioUrrORr4sw8djI",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Parse Classification').first().json.emailId }}",
+        "labelIds": "={{ [$json.id] }}"
+      },
+      "id": "2b3ea19b-53fe-4753-b51d-d2ae60138472",
+      "name": "Apply New Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1808,
+        1248
+      ],
+      "webhookId": "e6222fb3-0936-41e3-a9d4-18a388fd7a47",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "BioUrrORr4sw8djI",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Parse Classification').first().json.org.archive }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8a3db221-7a63-4c56-87f7-b1619abcd81c",
+      "name": "Archive Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        1440
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $('Parse Classification').first().json.emailId }}",
+        "labelIds": [
+          "INBOX"
+        ]
+      },
+      "id": "a78fb8d9-d0da-4b34-aced-da958b40bcdf",
+      "name": "Archive Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        1440
+      ],
+      "webhookId": "051b1234-a3fa-4b81-82d9-bbfa5e82251b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "BioUrrORr4sw8djI",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
-    "New Email Webhook": {
+    "Gmail Trigger": {
       "main": [
         [
           {
-            "node": "Build Classification Request",
+            "node": "Stamp iris-reviewed",
             "type": "main",
             "index": 0
           }
@@ -395,6 +615,21 @@
         [
           {
             "node": "Route by Email Class",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apply Org Labels",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Has New Label?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Archive Email?",
             "type": "main",
             "index": 0
           }
@@ -440,7 +675,7 @@
         ],
         [
           {
-            "node": "Log: Slack DM Action Required",
+            "node": "Action Required DM",
             "type": "main",
             "index": 0
           }
@@ -453,19 +688,76 @@
           }
         ]
       ]
+    },
+    "Stamp iris-reviewed": {
+      "main": [
+        [
+          {
+            "node": "Build Classification Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has New Label?": {
+      "main": [
+        [
+          {
+            "node": "Create New Label",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Create New Label": {
+      "main": [
+        [
+          {
+            "node": "Apply New Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Archive Email?": {
+      "main": [
+        [
+          {
+            "node": "Archive Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "binaryMode": "separate"
   },
-  "staticData": null,
+  "staticData": {
+    "node:Gmail Trigger": {
+      "Gmail Trigger": {
+        "lastTimeChecked": 1778125890,
+        "possibleDuplicates": [
+          "19e008fea387c9c9",
+          "19dfffcfc630a0e2"
+        ]
+      }
+    }
+  },
   "meta": null,
-  "pinData": null,
-  "versionId": "cac0ba78-7b66-4d77-a033-a0d3f98ac1ba",
-  "activeVersionId": null,
-  "triggerCount": 0,
+  "pinData": {},
+  "versionId": "fb0799ca-f528-4972-9d11-220c409f75dc",
+  "activeVersionId": "fb0799ca-f528-4972-9d11-220c409f75dc",
+  "triggerCount": 1,
   "shared": [
     {
       "updatedAt": "2026-05-05T22:06:52.268Z",
@@ -475,6 +767,746 @@
       "projectId": "TxCYhXtkt9tpKOLj"
     }
   ],
-  "activeVersion": null,
+  "activeVersion": {
+    "updatedAt": "2026-05-06T21:56:02.550Z",
+    "createdAt": "2026-05-06T21:56:02.550Z",
+    "versionId": "fb0799ca-f528-4972-9d11-220c409f75dc",
+    "workflowId": "QlG1fDHb6qpVX4xa",
+    "nodes": [
+      {
+        "parameters": {
+          "pollTimes": {
+            "item": [
+              {
+                "mode": "everyX",
+                "value": 5,
+                "unit": "minutes"
+              }
+            ]
+          },
+          "simple": false,
+          "filters": {
+            "q": "is:unread -label:iris-reviewed"
+          },
+          "options": {}
+        },
+        "id": "4373dfec-b382-4b08-8fc1-656d9ca76361",
+        "name": "Gmail Trigger",
+        "type": "n8n-nodes-base.gmailTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          240,
+          1152
+        ],
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "BioUrrORr4sw8djI",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const email = $('Gmail Trigger').first().json;\n\nconst labelContext = `Existing labels (use exact names):\n  - AdQuadrant\n  - TikTok\n  - Asana\n  - Asana/Task Alerts\n  - Asana/Assignments\n  - Operations\n  - Google\n  - Google/Alerts\n  - Meta\n  - Meta/Updates\n  - Meta/Receipts\n  - Forwarded for James\n  - Affiliate Email Group`;\n\nconst promptLines = [\n  '# Email Classifier for Iris (Nelson Torres, AdQuadrant)',\n  '',\n  'Classify the email and decide organizational actions. Apply the FIRST matching class rule.',\n  '',\n  '### 1. TRANSCRIPT',\n  'Match if: sender domain is fireflies.ai/otter.ai/zoom.us/fathom.video/grain.com,',\n  'or sender contains notetaker@/transcript@/recording@,',\n  'or sender is meet-recordings-noreply@google.com,',\n  'or subject contains: transcript/recording/meeting notes/meeting summary,',\n  'or body > 1500 chars AND subject mentions meeting/call/sync/standup/review/demo.',\n  '',\n  '### 2. ACTION_REQUIRED',\n  'Match if ANY of:',\n  '- Email directly addressed to Nelson requiring a decision, response, or task.',\n  '- A named individual invited Nelson to a platform/tool/team (e.g. \"X invited you to join...\").',\n  '- Access grant, approval request, partner request, or account action triggered by a specific person.',\n  '- Invite link present that expires or requires acceptance.',\n  'Extract: {action_summary: one sentence of what Nelson must DO,',\n  '  sender_name: first name or name of person who triggered it,',\n  '  deadline: date string or null,',\n  '  urgency: \"high\" if from AJ/Vish/Hailey/Lindsay/Daniel or deadline within 24h, else \"normal\"}',\n  '',\n  '### 3. NEWSLETTER',\n  'Match if: mass-send marketing email.',\n  'Strong signals: List-Unsubscribe header present, body contains unsubscribe/view-in-browser/email-preferences.',\n  'Weak signals: no-reply/do-not-reply sender, promotional language.',\n  'EXCEPTION: Do NOT classify as NEWSLETTER if a named individual triggered the email (invite, team add, access grant).',\n  'Extract: {sender_name, sender_email, is_new_sender: boolean}',\n  '',\n  '### 4. SPAM',\n  'Match if: unknown sender + no legitimate context, phishing/lottery/prize language.',\n  'Only classify SPAM if confidence > 95%.',\n  '',\n  '### 5. SCHEDULING',\n  'Match if: explicit date/time proposed, scheduling phrases, calendar/meeting links from a person.',\n  'Extract: {proposed_times: [], attendees: [], topic, meeting_link}',\n  '',\n  '### 6. WAITING_FOR_REPLY',\n  'Match if: Nelson sent the last message in a thread and this is a reply arriving.',\n  'Extract: {recipient_name, recipient_email, subject, thread_id}',\n  '',\n  '### 7. FYI',\n  'Informational, receipts, CC announcements, system notifications, onboarding/welcome emails with no required action.',\n  'Extract: {subject, sender_name}',\n  '',\n  '## Organizational Actions (org)',\n  'After classifying, decide:',\n  '',\n  '**apply_labels**: Array of existing label names to apply. Pick from this list ONLY:',\n  labelContext,\n  'Rules:',\n  '  - AdQuadrant → sender email ends in @adquadrant.com',\n  '  - Meta/Meta/Updates/Meta/Receipts → from Meta, Facebook, Instagram business platforms',\n  '  - TikTok → from TikTok business platforms',\n  '  - Google/Google/Alerts → from Google Ads, Analytics, Search Console, or Google alerts',\n  '  - Asana/Asana/Task Alerts/Asana/Assignments → from Asana',\n  '  - Operations → operational/infrastructure notifications',\n  '  - Apply the most specific sub-label available (e.g. Meta/Receipts over Meta)',\n  '',\n  '**new_label**: null, OR {name: \"Platform/Type\", purpose: \"one line\"} if no existing label fits',\n  '  and this is clearly a recurring category (e.g. \"Shopify/Notifications\", \"LinkedIn/Invites\").',\n  '  Follow the Platform/Type naming convention. Only create when confident it will recur.',\n  '',\n  '**archive**: true if the email has been handled by labeling and does not need to stay in inbox',\n  '  (newsletters, FYI receipts, automated alerts already routed to a label).',\n  '  ACTION_REQUIRED emails are NEVER archived.',\n  '',\n  '**trash**: true ONLY for SPAM class with >95% confidence. Never trash borderline cases.',\n  '',\n  '**note**: null, or one-line note ONLY if creating a new label or making a non-obvious decision.',\n  '',\n  '## Return Format',\n  'Return ONLY valid JSON, no markdown fences:',\n  '{\"class\":\"CLASS\",\"data\":{...},\"org\":{\"apply_labels\":[],\"new_label\":null,\"archive\":false,\"trash\":false,\"note\":null}}'\n];\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  system: promptLines.join('\\n'),\n  messages: [{ role: 'user', content:\n    'From: ' + (email.from || '') +\n    '\\nSubject: ' + (email.subject || '') +\n    '\\nBody:\\n' + (email.textPlain || email.text || email.snippet || '(no body)').slice(0, 3000)\n  }]\n}}];"
+        },
+        "id": "07e557d5-4bb4-430b-884d-dd78e25191f5",
+        "name": "Build Classification Request",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          688,
+          1152
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "anthropic-version",
+                "value": "2023-06-01"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json }}",
+          "options": {}
+        },
+        "id": "51652bce-70e5-41b9-9690-75ab8f1754e6",
+        "name": "Classify via Claude",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          912,
+          1152
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "qjdLurgn1OANVO3L",
+            "name": "Header Auth account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const response = $input.first().json;\nconst originalEmail = $('Gmail Trigger').first().json;\n\nconst LABEL_MAP = {\n  \"AdQuadrant\": \"Label_1635244963453248173\",\n  \"TikTok\": \"Label_1931679288864972310\",\n  \"Asana\": \"Label_2117505959743628807\",\n  \"Asana/Task Alerts\": \"Label_1407730268915045332\",\n  \"Asana/Assignments\": \"Label_7429247946084843356\",\n  \"Operations\": \"Label_2356661191061945189\",\n  \"Google\": \"Label_4106205777453927081\",\n  \"Google/Alerts\": \"Label_8083929895310398279\",\n  \"Meta\": \"Label_5536474334869364195\",\n  \"Meta/Updates\": \"Label_5499460052848277923\",\n  \"Meta/Receipts\": \"Label_8420736410624747805\",\n  \"Forwarded for James\": \"Label_7066207239495531100\",\n  \"Affiliate Email Group\": \"Label_8145982436135018374\"\n};\n\nlet parsed;\ntry {\n  let text = response.content[0].text;\n  text = text.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\n  parsed = JSON.parse(text);\n} catch (e) {\n  parsed = { class: 'UNKNOWN', data: { error: e.message }, org: {} };\n}\n\n// Resolve apply_labels names → IDs\nconst org = parsed.org || {};\nconst labelNames = org.apply_labels || [];\nconst applyLabelIds = labelNames.map(name => LABEL_MAP[name]).filter(Boolean);\n\nparsed.email = {\n  from: originalEmail.from || '',\n  subject: originalEmail.subject || ''\n};\nparsed.emailId = originalEmail.id;\nparsed.apply_label_ids = applyLabelIds;\n\nreturn [{ json: parsed }];"
+        },
+        "id": "e509582f-7594-448c-9807-42e623bdec23",
+        "name": "Parse Classification",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1136,
+          1152
+        ]
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.class }}",
+                      "rightValue": "TRANSCRIPT",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "renameOutput": true,
+                "outputKey": "TRANSCRIPT"
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.class }}",
+                      "rightValue": "NEWSLETTER",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "renameOutput": true,
+                "outputKey": "NEWSLETTER"
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.class }}",
+                      "rightValue": "SPAM",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "renameOutput": true,
+                "outputKey": "SPAM"
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.class }}",
+                      "rightValue": "SCHEDULING",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "renameOutput": true,
+                "outputKey": "SCHEDULING"
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.class }}",
+                      "rightValue": "WAITING_FOR_REPLY",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "renameOutput": true,
+                "outputKey": "WAITING_FOR_REPLY"
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.class }}",
+                      "rightValue": "ACTION_REQUIRED",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "renameOutput": true,
+                "outputKey": "ACTION_REQUIRED"
+              },
+              {
+                "conditions": {
+                  "combinator": "and",
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.class }}",
+                      "rightValue": "FYI",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "renameOutput": true,
+                "outputKey": "FYI"
+              }
+            ]
+          },
+          "options": {
+            "fallbackOutput": "extra",
+            "renameFallbackOutput": "UNKNOWN"
+          }
+        },
+        "id": "a41a40df-c606-40f9-a92e-de290be310b2",
+        "name": "Route by Email Class",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          1360,
+          384
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "{\"dry_run\": true, \"action\": \"trigger_transcript_processor\", \"message\": \"Would trigger Workflow 3 with email body\"}",
+          "options": {}
+        },
+        "id": "0361a28a-a7d2-4f6d-9cd8-72ce5c1f88dc",
+        "name": "Log: Transcript to WF3",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1584,
+          -96
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"label_and_archive\", \"label\": \"newsletter\", \"is_new_sender\": $json.data?.is_new_sender || false, \"message\": \"Would apply Gmail label newsletter and archive\"} }}",
+          "options": {}
+        },
+        "id": "51528424-f0f1-4786-9fd9-3254a0d55f69",
+        "name": "Log: Newsletter Label and Archive",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1584,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "{\"dry_run\": true, \"action\": \"move_to_trash\", \"message\": \"Would move email to Gmail trash\"}",
+          "options": {}
+        },
+        "id": "7d456741-74fa-4319-92e8-3822652da3a4",
+        "name": "Log: Spam to Trash",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1584,
+          288
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "{\"dry_run\": true, \"action\": \"trigger_calendar_creator\", \"message\": \"Would trigger Workflow 4 with scheduling data\"}",
+          "options": {}
+        },
+        "id": "e600b259-a74b-404e-9c7f-dcbdb54cd9b4",
+        "name": "Log: Scheduling to WF4",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1584,
+          480
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"store_follow_up\", \"recipient\": $json.data?.recipient_name || \"unknown\", \"subject\": $json.email?.subject || \"N/A\", \"message\": \"Would store in static data for daily 5 PM check\"} }}",
+          "options": {}
+        },
+        "id": "f0525702-2203-4aa5-8760-7ba60c129c94",
+        "name": "Log: Store Follow-Up",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1584,
+          672
+        ]
+      },
+      {
+        "parameters": {
+          "select": "channel",
+          "channelId": {
+            "value": "U0AS1DLUKQV",
+            "__rl": true,
+            "mode": "id"
+          },
+          "text": "={{ '\\ud83d\\udce7 Action needed: '+($json.from||'Unknown')+'\\nSubject: '+($json.subject||'(no subject)')+'\\n\\u2192 '+($json.action||'Review required') }}",
+          "otherOptions": {}
+        },
+        "id": "261a95f9-54b4-4928-881e-9767bd1968cd",
+        "name": "Action Required DM",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.2,
+        "position": [
+          1584,
+          864
+        ],
+        "webhookId": "1bc910a5-779e-4f30-82af-de918a3c174d",
+        "credentials": {
+          "slackApi": {
+            "id": "ie6DnUT6N6lLxV3B",
+            "name": "Slack account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "{\"dry_run\": true, \"action\": \"label_fyi_brief\", \"label\": \"fyi-brief\", \"message\": \"Would apply Gmail label fyi-brief\"}",
+          "options": {}
+        },
+        "id": "42a42dcc-b026-4a83-8540-c40a3596f663",
+        "name": "Log: FYI Label",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1584,
+          1056
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $('Gmail Trigger').first().json.id }}",
+          "labelIds": [
+            "Label_6628771149178182022"
+          ]
+        },
+        "id": "f33f6c24-d1c4-4413-a4c3-1f71196fbac9",
+        "name": "Stamp iris-reviewed",
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          464,
+          1152
+        ],
+        "webhookId": "c11fb4c3-0b41-454e-84cf-451d18da0cf8",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "BioUrrORr4sw8djI",
+            "name": "Gmail account"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.emailId }}",
+          "labelIds": "={{ $json.apply_label_ids }}"
+        },
+        "id": "82fa418a-5e76-49e9-83a1-7919a0aa0c51",
+        "name": "Apply Org Labels",
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          1360,
+          1056
+        ],
+        "webhookId": "be4ef711-5d98-4817-9673-758c2ab3b320",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "BioUrrORr4sw8djI",
+            "name": "Gmail account"
+          }
+        },
+        "continueOnFail": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $('Parse Classification').first().json.org.new_label?.name }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                },
+                "id": "c1c050a5-e087-4a47-bdc5-b1cbb9383f8d"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "c94670f2-362c-46ca-830d-3fad3da9be6c",
+        "name": "Has New Label?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1360,
+          1248
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "label",
+          "operation": "create",
+          "name": "={{ $('Parse Classification').first().json.org.new_label.name }}",
+          "options": {}
+        },
+        "id": "84251b33-cd36-4328-a922-aa684db280ff",
+        "name": "Create New Label",
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          1584,
+          1248
+        ],
+        "webhookId": "b80e105e-67f5-4fa4-988d-163f4fc30e53",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "BioUrrORr4sw8djI",
+            "name": "Gmail account"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $('Parse Classification').first().json.emailId }}",
+          "labelIds": "={{ [$json.id] }}"
+        },
+        "id": "2b3ea19b-53fe-4753-b51d-d2ae60138472",
+        "name": "Apply New Label",
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          1808,
+          1248
+        ],
+        "webhookId": "e6222fb3-0936-41e3-a9d4-18a388fd7a47",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "BioUrrORr4sw8djI",
+            "name": "Gmail account"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $('Parse Classification').first().json.org.archive }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "8a3db221-7a63-4c56-87f7-b1619abcd81c",
+        "name": "Archive Email?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1360,
+          1440
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "removeLabels",
+          "messageId": "={{ $('Parse Classification').first().json.emailId }}",
+          "labelIds": [
+            "INBOX"
+          ]
+        },
+        "id": "a78fb8d9-d0da-4b34-aced-da958b40bcdf",
+        "name": "Archive Email",
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          1584,
+          1440
+        ],
+        "webhookId": "051b1234-a3fa-4b81-82d9-bbfa5e82251b",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "BioUrrORr4sw8djI",
+            "name": "Gmail account"
+          }
+        },
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Gmail Trigger": {
+        "main": [
+          [
+            {
+              "node": "Stamp iris-reviewed",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Classification Request": {
+        "main": [
+          [
+            {
+              "node": "Classify via Claude",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Classify via Claude": {
+        "main": [
+          [
+            {
+              "node": "Parse Classification",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Classification": {
+        "main": [
+          [
+            {
+              "node": "Route by Email Class",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Apply Org Labels",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Has New Label?",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Archive Email?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route by Email Class": {
+        "main": [
+          [
+            {
+              "node": "Log: Transcript to WF3",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log: Newsletter Label and Archive",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log: Spam to Trash",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log: Scheduling to WF4",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log: Store Follow-Up",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Action Required DM",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log: FYI Label",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp iris-reviewed": {
+        "main": [
+          [
+            {
+              "node": "Build Classification Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has New Label?": {
+        "main": [
+          [
+            {
+              "node": "Create New Label",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Create New Label": {
+        "main": [
+          [
+            {
+              "node": "Apply New Label",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Archive Email?": {
+        "main": [
+          [
+            {
+              "node": "Archive Email",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
   "tags": []
 }
