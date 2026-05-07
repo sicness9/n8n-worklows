@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-05T22:06:52.817Z",
+  "updatedAt": "2026-05-06T21:03:47.173Z",
   "createdAt": "2026-05-05T22:06:52.817Z",
   "id": "V9nBJmspHOAo5MU5",
   "name": "Morning Brief Push",
@@ -37,16 +37,28 @@
     },
     {
       "id": "c476cbc8-99c3-4504-9bd6-675f7a2c94ed",
-      "name": "Placeholder: Asana Slack Gmail Data",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "name": "Fetch Asana Tasks",
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
       "position": [
         500,
         400
       ],
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "{\"asana\": {\"tasks_due_today\": [\"Review pixel setup for ClientX\"], \"overdue\": [], \"urgent\": [\"AQI pipeline sync\"]}, \"slack\": {\"unread_dms\": [\"Vish: BigQuery schema question\"], \"mentions\": [\"Lindsay tagged you in CP standup\"]}, \"gmail\": {\"action_required\": [\"AJ re: pixel audit\"], \"unread_count\": 12}, \"note\": \"Replace with real Asana/Slack/Gmail API calls when MCPs are connected\"}"
+        "resource": "task",
+        "operation": "getAll",
+        "workspace": "176606469292597",
+        "assignee": "me",
+        "returnAll": true,
+        "otherProperties": {
+          "completedSince": "now"
+        }
+      },
+      "credentials": {
+        "asanaOAuth2Api": {
+          "id": "IhJhkNbbtfrtt5U9",
+          "name": "Asana account"
+        }
       }
     },
     {
@@ -61,7 +73,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "var today = new Date();\nvar dateStr = today.toISOString().split('T')[0];\nvar dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];\n\nvar asanaData = $input.first().json.asana || { tasks_due_today: [], overdue: [], urgent: [] };\nvar slackData = $input.first().json.slack || { unread_dms: [], mentions: [] };\nvar gmailData = $input.first().json.gmail || { action_required: [], unread_count: 0 };\n\nvar promptLines = [\n  '# Morning Briefing',\n  '',\n  'Generate a concise morning briefing for Nelson Torres at AdQuadrant.',\n  'Today is ' + dayName + ', ' + dateStr + '.',\n  '',\n  '## Data Sources',\n  '',\n  '### Asana Tasks',\n  JSON.stringify(asanaData),\n  '',\n  '### Slack (last 24h)',\n  JSON.stringify(slackData),\n  '',\n  '### Gmail',\n  JSON.stringify(gmailData),\n  '',\n  '## Output Format',\n  '',\n  '### Needs Action Today',\n  'Ranked by urgency + effort. Include source and brief context.',\n  '',\n  '### On Your Radar',\n  'Due soon, waiting on others, FYI threads worth knowing.',\n  '',\n  '### Inbox Summary',\n  'Slack + email items condensed. Paraphrase, never verbatim.',\n  '',\n  '## Rules',\n  '- Keep under 40 lines total',\n  '- Do not list completed tasks',\n  '- If nothing is urgent, say so',\n  '- Cross-reference Slack/email threads connected to Asana tasks'\n];\nvar systemPrompt = promptLines.join('\\n');\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 2048,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Generate the morning briefing for ' + dayName + ' ' + dateStr + '.'\n  }]\n}}];"
+        "jsCode": "var today = new Date();\nvar dateStr = today.toISOString().split('T')[0];\nvar dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];\n\nvar tasks = $input.all().map(function(item) { return item.json; });\nvar asanaData = {\n  tasks_due_today: tasks.filter(function(t) { return t.due_on === dateStr; }).map(function(t) { return t.name; }),\n  overdue: tasks.filter(function(t) { return t.due_on && t.due_on < dateStr; }).map(function(t) { return t.name; }),\n  upcoming: tasks.filter(function(t) { return t.due_on && t.due_on > dateStr; }).slice(0, 10).map(function(t) { return t.name + ' (due: ' + t.due_on + ')'; }),\n  no_due_date: tasks.filter(function(t) { return !t.due_on; }).map(function(t) { return t.name; })\n};\nvar slackData = { unread_dms: [], mentions: [], note: 'Slack data not yet connected' };\nvar gmailData = { action_required: [], unread_count: 0, note: 'Gmail data not yet connected' };\n\nvar promptLines = [\n  '# Morning Briefing',\n  '',\n  'Generate a concise morning briefing for Nelson Torres at AdQuadrant.',\n  'Today is ' + dayName + ', ' + dateStr + '.',\n  '',\n  '## Data Sources',\n  '',\n  '### Asana Tasks',\n  JSON.stringify(asanaData),\n  '',\n  '### Slack (last 24h)',\n  JSON.stringify(slackData),\n  '',\n  '### Gmail',\n  JSON.stringify(gmailData),\n  '',\n  '## Output Format',\n  '',\n  '### Needs Action Today',\n  'Ranked by urgency + effort. Include source and brief context.',\n  '',\n  '### On Your Radar',\n  'Due soon, waiting on others, FYI threads worth knowing.',\n  '',\n  '### Inbox Summary',\n  'Slack + email items condensed. Paraphrase, never verbatim.',\n  '',\n  '## Rules',\n  '- Keep under 40 lines total',\n  '- Do not list completed tasks',\n  '- If nothing is urgent, say so',\n  '- Cross-reference Slack/email threads connected to Asana tasks'\n];\nvar systemPrompt = promptLines.join('\\n');\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 2048,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Generate the morning briefing for ' + dayName + ' ' + dateStr + '.'\n  }]\n}}];"
       }
     },
     {
@@ -92,6 +104,12 @@
         "contentType": "json",
         "specifyBody": "json",
         "jsonBody": "={{ $json }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qjdLurgn1OANVO3L",
+          "name": "Header Auth account"
+        }
       }
     },
     {
@@ -111,17 +129,32 @@
     },
     {
       "id": "78ad31c6-1a8b-4a4e-8efe-420fd314669a",
-      "name": "Log: Slack DM Morning Brief",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "name": "Morning Brief DM",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
       "position": [
         1620,
         400
       ],
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm_morning_brief\", \"generated_at\": $json.generated_at, \"would_send\": $json.brief} }}"
-      }
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "value": "U0AS1DLUKQV",
+          "__rl": true,
+          "mode": "id"
+        },
+        "text": "={{ $json.brief || $json.content || 'Morning brief ready.' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Slack account"
+        }
+      },
+      "webhookId": "533d51a0-1a82-418e-89be-09cec6816e57"
     }
   ],
   "connections": {
@@ -129,14 +162,14 @@
       "main": [
         [
           {
-            "node": "Placeholder: Asana Slack Gmail Data",
+            "node": "Fetch Asana Tasks",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Placeholder: Asana Slack Gmail Data": {
+    "Fetch Asana Tasks": {
       "main": [
         [
           {
@@ -173,7 +206,7 @@
       "main": [
         [
           {
-            "node": "Log: Slack DM Morning Brief",
+            "node": "Morning Brief DM",
             "type": "main",
             "index": 0
           }
@@ -189,7 +222,7 @@
   "staticData": null,
   "meta": null,
   "pinData": null,
-  "versionId": "81974be6-c1de-4e5f-8d8c-ac8b9bd702ae",
+  "versionId": "6697a30f-2579-45fb-9229-0fd1a8c34a0b",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
