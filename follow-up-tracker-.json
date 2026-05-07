@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-05T22:06:52.387Z",
+  "updatedAt": "2026-05-06T21:03:52.673Z",
   "createdAt": "2026-05-05T22:06:52.387Z",
   "id": "07JQoukoPdg9dGA1",
   "name": "Follow-Up Tracker",
@@ -106,17 +106,32 @@
     },
     {
       "id": "a0a85794-6847-49d0-b973-6afedb9ad15d",
-      "name": "Log: Slack DM Follow-Up Reminder",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "name": "Follow-Up Reminder DM",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
       "position": [
         1000,
         400
       ],
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ {\"dry_run\": true, \"action\": \"slack_dm_reminder\", \"reminder_count\": $json.reminder_count, \"would_send\": $json.slack_message, \"message\": \"Would send follow-up reminder Slack DM with \" + $json.reminder_count + \" items\"} }}"
-      }
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "value": "U0AS1DLUKQV",
+          "__rl": true,
+          "mode": "id"
+        },
+        "text": "={{ '\\u23f3 Waiting on replies \\u2014 '+($json.pending_count||0)+' thread(s):\\n\\n'+($json.reminders||[]).map(function(r){return '\\u2022 '+r.sender+' re: '+r.subject+' \\u2014 sent '+r.days_ago+' day(s) ago';}).join('\\n') }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Slack account"
+        }
+      },
+      "webhookId": "7bff2a4f-924e-433a-bd7f-cba3b7970897"
     },
     {
       "id": "b1d234bd-1f97-4d11-8f2d-6dce449a915b",
@@ -168,7 +183,7 @@
       "main": [
         [
           {
-            "node": "Log: Slack DM Follow-Up Reminder",
+            "node": "Follow-Up Reminder DM",
             "type": "main",
             "index": 0
           }
@@ -191,7 +206,7 @@
   "staticData": null,
   "meta": null,
   "pinData": null,
-  "versionId": "f9061bed-ec2e-4e03-88ce-65ebf2b41f16",
+  "versionId": "4f8ef851-b97b-4706-88e2-fa760e15fc62",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
