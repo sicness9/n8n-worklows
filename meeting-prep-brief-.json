@@ -1,0 +1,714 @@
+{
+  "updatedAt": "2026-05-07T19:56:43.306Z",
+  "createdAt": "2026-05-07T05:15:21.196Z",
+  "id": "sCiBWFHwOLL4Lt37",
+  "name": "Meeting Prep Brief",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "d9758ea0-b70f-497f-a376-52448f32f7b4",
+      "name": "Every 30 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        400
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "de11401d-84b7-4757-8c10-62a563ccb226",
+      "name": "Fetch Upcoming Meetings",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        520,
+        400
+      ],
+      "parameters": {
+        "resource": "event",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "nelson.torres@adquadrant.com"
+        },
+        "returnAll": true,
+        "timeMin": "={{ new Date(Date.now() + 25 * 60 * 1000).toISOString() }}",
+        "timeMax": "={{ new Date(Date.now() + 50 * 60 * 1000).toISOString() }}",
+        "options": {
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "37dh7UZDNrM2RQ4L",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "fe08bf16-1d9d-4188-af2d-d255acd24263",
+      "name": "Prepare Meeting Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "var staticData = $getWorkflowStaticData('global');\nif (!staticData.prepped) staticData.prepped = {};\n\nvar now = new Date();\nvar cutoff = now.getTime() - 24 * 60 * 60 * 1000;\nObject.keys(staticData.prepped).forEach(function(key) {\n  if (new Date(staticData.prepped[key]).getTime() < cutoff) delete staticData.prepped[key];\n});\n\nvar events = $input.all().map(function(item) { return item.json; });\nvar unprepped = events.filter(function(e) {\n  if (!e.start || !e.start.dateTime) return false;\n  if (e.status === 'cancelled') return false;\n  var attendees = e.attendees || [];\n  var others = attendees.filter(function(a) { return a.email !== 'nelson.torres@adquadrant.com' && !a.self; });\n  if (attendees.length > 0 && others.length === 0) return false;\n  var key = 'prep_' + e.id;\n  if (staticData.prepped[key]) return false;\n  return true;\n});\n\nif (unprepped.length === 0) {\n  return [{ json: { has_meetings: false, meeting_count: 0 } }];\n}\n\nvar meetings = unprepped.map(function(e) {\n  var attendees = (e.attendees || []).filter(function(a) { return a.email !== 'nelson.torres@adquadrant.com' && !a.self; });\n  var start = new Date(e.start.dateTime);\n  var end = new Date(e.end.dateTime);\n  staticData.prepped['prep_' + e.id] = now.toISOString();\n  return {\n    id: e.id,\n    title: e.summary || 'Untitled Meeting',\n    start: start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),\n    end: end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),\n    duration: Math.round((end - start) / (1000 * 60)),\n    attendees: attendees.map(function(a) { return { name: a.displayName || a.email.split('@')[0], email: a.email }; }),\n    joinLink: e.hangoutLink || (e.conferenceData && e.conferenceData.entryPoints && e.conferenceData.entryPoints[0] ? e.conferenceData.entryPoints[0].uri : ''),\n    description: e.description || ''\n  };\n});\n\nvar searchTerms = meetings.map(function(m) { return m.title; });\nvar attendeeNames = [];\nmeetings.forEach(function(m) { m.attendees.forEach(function(a) { if (attendeeNames.indexOf(a.name) === -1) attendeeNames.push(a.name); }); });\nvar searchQuery = searchTerms.concat(attendeeNames.slice(0, 3)).join(' OR ');\n\nreturn [{ json: {\n  has_meetings: true,\n  meeting_count: meetings.length,\n  meetings: meetings,\n  search_query: searchQuery\n}}];"
+      }
+    },
+    {
+      "id": "07206b75-61a4-4274-9570-b29c33f7b027",
+      "name": "Has Meetings to Prep?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.has_meetings }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f5919b15-88c2-477b-8216-802b2529fd09",
+      "name": "Search Slack Context",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1380,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "search",
+        "query": "={{ $json.search_query }}",
+        "sort": "desc",
+        "returnAll": false,
+        "limit": 10,
+        "options": {}
+      },
+      "webhookId": "233693db-bb9b-4654-87e9-f9132111d933",
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "df5e4227-2b15-4334-ac92-10402dbc9a5b",
+      "name": "Build Prep Brief Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1660,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "var meetingData = $('Prepare Meeting Data').first().json;\nvar slackResults = $input.all().map(function(item) { return item.json; });\n\nvar slackContext = slackResults.filter(function(r) { return r.text; }).slice(0, 8).map(function(r) {\n  return '- [' + (r.username || 'unknown') + ' in #' + (r.channel && r.channel.name || 'dm') + ']: ' + (r.text || '').substring(0, 200);\n}).join('\\n');\n\nvar meetingLines = meetingData.meetings.map(function(m) {\n  var attendeeStr = m.attendees.map(function(a) { return a.name + ' (' + a.email + ')'; }).join(', ');\n  return '- ' + m.title + ' at ' + m.start + ' (' + m.duration + 'min)\\n  Attendees: ' + attendeeStr + (m.description ? '\\n  Description: ' + m.description.substring(0, 300) : '');\n}).join('\\n');\n\nvar prompt = 'Generate a concise meeting prep brief. Keep it under 20 lines.\\n\\n';\nprompt += '## Upcoming Meetings\\n' + meetingLines + '\\n\\n';\nif (slackContext) prompt += '## Recent Slack Context\\n' + slackContext + '\\n\\n';\nprompt += '## Output Format\\nFor each meeting:\\n';\nprompt += '1. One-line summary of what this meeting is about\\n';\nprompt += '2. Key attendees and their likely roles/interests\\n';\nprompt += '3. Recent context from Slack (if relevant)\\n';\nprompt += '4. Suggested talking points or things to prepare\\n';\nprompt += '5. Join link (if available)\\n';\n\nvar joinLinks = meetingData.meetings.filter(function(m) { return m.joinLink; }).map(function(m) { return m.title + ': ' + m.joinLink; });\nif (joinLinks.length > 0) prompt += '\\nJoin links:\\n' + joinLinks.join('\\n') + '\\n';\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  messages: [{ role: 'user', content: prompt }]\n}}];"
+      }
+    },
+    {
+      "id": "df11fdcf-5a14-48f2-9de2-205442854b41",
+      "name": "Generate Prep Brief via Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1940,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qjdLurgn1OANVO3L",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "id": "2a0a6394-02df-4fa6-a46d-0f1026936f64",
+      "name": "Format Prep Brief",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "var response = $input.first().json;\nvar briefText;\ntry {\n  briefText = response.content[0].text;\n} catch (e) {\n  briefText = 'Error generating prep brief: ' + e.message;\n}\n\nvar message = '*Meeting Prep Brief*\\n\\n' + briefText + '\\n\\n_\\u2726 Iris \\u2014 Nelson\\'s personal AI assistant_';\nreturn [{ json: { message: message } }];"
+      }
+    },
+    {
+      "id": "e46126b6-ad82-47a0-b0c3-c6e84f6adcee",
+      "name": "Send Prep Brief DM",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        2500,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "U0AS1DLUKQV"
+        },
+        "messageType": "text",
+        "text": "={{ $json.message }}",
+        "otherOptions": {}
+      },
+      "webhookId": "336436d8-700a-49f8-bb7b-e5578a7a2e9a",
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "203a5b17-0670-4ac8-b259-8ce8dd7afba0",
+      "name": "No Meetings to Prep",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1380,
+        500
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Every 30 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Fetch Upcoming Meetings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Upcoming Meetings": {
+      "main": [
+        [
+          {
+            "node": "Prepare Meeting Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Meeting Data": {
+      "main": [
+        [
+          {
+            "node": "Has Meetings to Prep?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Meetings to Prep?": {
+      "main": [
+        [
+          {
+            "node": "Search Slack Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Meetings to Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Slack Context": {
+      "main": [
+        [
+          {
+            "node": "Build Prep Brief Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prep Brief Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate Prep Brief via Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Prep Brief via Claude": {
+      "main": [
+        [
+          {
+            "node": "Format Prep Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Prep Brief": {
+      "main": [
+        [
+          {
+            "node": "Send Prep Brief DM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/New_York",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Every 30 Minutes": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "prepped": {
+        "prep_0rr37erbs4n7d42sskf81knn2l": "2026-05-07T15:00:34.268Z",
+        "prep_2l99orig80he2l5ssguemsohut_20260507T163000Z": "2026-05-07T16:00:34.230Z",
+        "prep_321qn9svva7cfap4ulhpqb82b6_20260507T170000Z": "2026-05-07T16:30:34.221Z",
+        "prep_inlogkfq5m8tc77li6st4j6m78_20260507T180000Z": "2026-05-07T17:30:34.288Z",
+        "prep_harmhlndelsaqkfa8qp48iab1s": "2026-05-07T19:00:34.280Z",
+        "prep__6dim8e1m69imabb16osjib9k6ks36b9pccpj2bb4cgo32e9k64o34dpl74": "2026-05-07T20:00:45.241Z"
+      }
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true
+  },
+  "pinData": null,
+  "versionId": "779258c6-bbae-48ea-be65-54e8ae1cde5e",
+  "activeVersionId": "779258c6-bbae-48ea-be65-54e8ae1cde5e",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-05-07T05:15:21.200Z",
+      "createdAt": "2026-05-07T05:15:21.200Z",
+      "role": "workflow:owner",
+      "workflowId": "sCiBWFHwOLL4Lt37",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-05-07T19:56:43.307Z",
+    "createdAt": "2026-05-07T19:56:43.307Z",
+    "versionId": "779258c6-bbae-48ea-be65-54e8ae1cde5e",
+    "workflowId": "sCiBWFHwOLL4Lt37",
+    "nodes": [
+      {
+        "id": "d9758ea0-b70f-497f-a376-52448f32f7b4",
+        "name": "Every 30 Minutes",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          240,
+          400
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes",
+                "minutesInterval": 30
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "de11401d-84b7-4757-8c10-62a563ccb226",
+        "name": "Fetch Upcoming Meetings",
+        "type": "n8n-nodes-base.googleCalendar",
+        "typeVersion": 1.3,
+        "position": [
+          520,
+          400
+        ],
+        "parameters": {
+          "resource": "event",
+          "operation": "getAll",
+          "calendar": {
+            "__rl": true,
+            "mode": "id",
+            "value": "nelson.torres@adquadrant.com"
+          },
+          "returnAll": true,
+          "timeMin": "={{ new Date(Date.now() + 25 * 60 * 1000).toISOString() }}",
+          "timeMax": "={{ new Date(Date.now() + 50 * 60 * 1000).toISOString() }}",
+          "options": {
+            "singleEvents": true,
+            "orderBy": "startTime"
+          }
+        },
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "37dh7UZDNrM2RQ4L",
+            "name": "Google Calendar account"
+          }
+        }
+      },
+      {
+        "id": "fe08bf16-1d9d-4188-af2d-d255acd24263",
+        "name": "Prepare Meeting Data",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          820,
+          400
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "var staticData = $getWorkflowStaticData('global');\nif (!staticData.prepped) staticData.prepped = {};\n\nvar now = new Date();\nvar cutoff = now.getTime() - 24 * 60 * 60 * 1000;\nObject.keys(staticData.prepped).forEach(function(key) {\n  if (new Date(staticData.prepped[key]).getTime() < cutoff) delete staticData.prepped[key];\n});\n\nvar events = $input.all().map(function(item) { return item.json; });\nvar unprepped = events.filter(function(e) {\n  if (!e.start || !e.start.dateTime) return false;\n  if (e.status === 'cancelled') return false;\n  var attendees = e.attendees || [];\n  var others = attendees.filter(function(a) { return a.email !== 'nelson.torres@adquadrant.com' && !a.self; });\n  if (attendees.length > 0 && others.length === 0) return false;\n  var key = 'prep_' + e.id;\n  if (staticData.prepped[key]) return false;\n  return true;\n});\n\nif (unprepped.length === 0) {\n  return [{ json: { has_meetings: false, meeting_count: 0 } }];\n}\n\nvar meetings = unprepped.map(function(e) {\n  var attendees = (e.attendees || []).filter(function(a) { return a.email !== 'nelson.torres@adquadrant.com' && !a.self; });\n  var start = new Date(e.start.dateTime);\n  var end = new Date(e.end.dateTime);\n  staticData.prepped['prep_' + e.id] = now.toISOString();\n  return {\n    id: e.id,\n    title: e.summary || 'Untitled Meeting',\n    start: start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),\n    end: end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),\n    duration: Math.round((end - start) / (1000 * 60)),\n    attendees: attendees.map(function(a) { return { name: a.displayName || a.email.split('@')[0], email: a.email }; }),\n    joinLink: e.hangoutLink || (e.conferenceData && e.conferenceData.entryPoints && e.conferenceData.entryPoints[0] ? e.conferenceData.entryPoints[0].uri : ''),\n    description: e.description || ''\n  };\n});\n\nvar searchTerms = meetings.map(function(m) { return m.title; });\nvar attendeeNames = [];\nmeetings.forEach(function(m) { m.attendees.forEach(function(a) { if (attendeeNames.indexOf(a.name) === -1) attendeeNames.push(a.name); }); });\nvar searchQuery = searchTerms.concat(attendeeNames.slice(0, 3)).join(' OR ');\n\nreturn [{ json: {\n  has_meetings: true,\n  meeting_count: meetings.length,\n  meetings: meetings,\n  search_query: searchQuery\n}}];"
+        }
+      },
+      {
+        "id": "07206b75-61a4-4274-9570-b29c33f7b027",
+        "name": "Has Meetings to Prep?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1100,
+          400
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "combinator": "and",
+            "conditions": [
+              {
+                "leftValue": "={{ $json.has_meetings }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "f5919b15-88c2-477b-8216-802b2529fd09",
+        "name": "Search Slack Context",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          1380,
+          300
+        ],
+        "parameters": {
+          "resource": "message",
+          "operation": "search",
+          "query": "={{ $json.search_query }}",
+          "sort": "desc",
+          "returnAll": false,
+          "limit": 10,
+          "options": {}
+        },
+        "webhookId": "233693db-bb9b-4654-87e9-f9132111d933",
+        "credentials": {
+          "slackApi": {
+            "id": "ie6DnUT6N6lLxV3B",
+            "name": "Slack account"
+          }
+        }
+      },
+      {
+        "id": "df5e4227-2b15-4334-ac92-10402dbc9a5b",
+        "name": "Build Prep Brief Prompt",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1660,
+          300
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "var meetingData = $('Prepare Meeting Data').first().json;\nvar slackResults = $input.all().map(function(item) { return item.json; });\n\nvar slackContext = slackResults.filter(function(r) { return r.text; }).slice(0, 8).map(function(r) {\n  return '- [' + (r.username || 'unknown') + ' in #' + (r.channel && r.channel.name || 'dm') + ']: ' + (r.text || '').substring(0, 200);\n}).join('\\n');\n\nvar meetingLines = meetingData.meetings.map(function(m) {\n  var attendeeStr = m.attendees.map(function(a) { return a.name + ' (' + a.email + ')'; }).join(', ');\n  return '- ' + m.title + ' at ' + m.start + ' (' + m.duration + 'min)\\n  Attendees: ' + attendeeStr + (m.description ? '\\n  Description: ' + m.description.substring(0, 300) : '');\n}).join('\\n');\n\nvar prompt = 'Generate a concise meeting prep brief. Keep it under 20 lines.\\n\\n';\nprompt += '## Upcoming Meetings\\n' + meetingLines + '\\n\\n';\nif (slackContext) prompt += '## Recent Slack Context\\n' + slackContext + '\\n\\n';\nprompt += '## Output Format\\nFor each meeting:\\n';\nprompt += '1. One-line summary of what this meeting is about\\n';\nprompt += '2. Key attendees and their likely roles/interests\\n';\nprompt += '3. Recent context from Slack (if relevant)\\n';\nprompt += '4. Suggested talking points or things to prepare\\n';\nprompt += '5. Join link (if available)\\n';\n\nvar joinLinks = meetingData.meetings.filter(function(m) { return m.joinLink; }).map(function(m) { return m.title + ': ' + m.joinLink; });\nif (joinLinks.length > 0) prompt += '\\nJoin links:\\n' + joinLinks.join('\\n') + '\\n';\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  messages: [{ role: 'user', content: prompt }]\n}}];"
+        }
+      },
+      {
+        "id": "df11fdcf-5a14-48f2-9de2-205442854b41",
+        "name": "Generate Prep Brief via Claude",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1940,
+          300
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "anthropic-version",
+                "value": "2023-06-01"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ $json }}"
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "qjdLurgn1OANVO3L",
+            "name": "Header Auth account"
+          }
+        }
+      },
+      {
+        "id": "2a0a6394-02df-4fa6-a46d-0f1026936f64",
+        "name": "Format Prep Brief",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2220,
+          300
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "var response = $input.first().json;\nvar briefText;\ntry {\n  briefText = response.content[0].text;\n} catch (e) {\n  briefText = 'Error generating prep brief: ' + e.message;\n}\n\nvar message = '*Meeting Prep Brief*\\n\\n' + briefText + '\\n\\n_\\u2726 Iris \\u2014 Nelson\\'s personal AI assistant_';\nreturn [{ json: { message: message } }];"
+        }
+      },
+      {
+        "id": "e46126b6-ad82-47a0-b0c3-c6e84f6adcee",
+        "name": "Send Prep Brief DM",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          2500,
+          300
+        ],
+        "parameters": {
+          "resource": "message",
+          "operation": "post",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "U0AS1DLUKQV"
+          },
+          "messageType": "text",
+          "text": "={{ $json.message }}",
+          "otherOptions": {}
+        },
+        "webhookId": "336436d8-700a-49f8-bb7b-e5578a7a2e9a",
+        "credentials": {
+          "slackApi": {
+            "id": "ie6DnUT6N6lLxV3B",
+            "name": "Slack account"
+          }
+        }
+      },
+      {
+        "id": "203a5b17-0670-4ac8-b259-8ce8dd7afba0",
+        "name": "No Meetings to Prep",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          1380,
+          500
+        ],
+        "parameters": {}
+      }
+    ],
+    "connections": {
+      "Every 30 Minutes": {
+        "main": [
+          [
+            {
+              "node": "Fetch Upcoming Meetings",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Upcoming Meetings": {
+        "main": [
+          [
+            {
+              "node": "Prepare Meeting Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Meeting Data": {
+        "main": [
+          [
+            {
+              "node": "Has Meetings to Prep?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Meetings to Prep?": {
+        "main": [
+          [
+            {
+              "node": "Search Slack Context",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Meetings to Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Search Slack Context": {
+        "main": [
+          [
+            {
+              "node": "Build Prep Brief Prompt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Prep Brief Prompt": {
+        "main": [
+          [
+            {
+              "node": "Generate Prep Brief via Claude",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate Prep Brief via Claude": {
+        "main": [
+          [
+            {
+              "node": "Format Prep Brief",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Prep Brief": {
+        "main": [
+          [
+            {
+              "node": "Send Prep Brief DM",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}
