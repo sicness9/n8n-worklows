@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-06T21:03:48.731Z",
+  "updatedAt": "2026-05-07T13:33:50.783Z",
   "createdAt": "2026-05-05T22:06:52.712Z",
   "id": "pGK6nR9vJdbiGZJZ",
   "name": "Calendar Alert Engine",
@@ -201,7 +201,8 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": true,
+    "timezone": "America/New_York"
   },
   "staticData": {
     "node:Every 5 Minutes": {
@@ -209,11 +210,11 @@
     },
     "global": {
       "alerted": {
-        "calendar_alerted_g6f8jrurkdfj4m9jp9b7lt57jg_t1": "2026-05-06T16:40:53.367Z",
-        "calendar_alerted_2ekjm6o5f7sh4es84bjcbdhv24_20260506T170000Z_t15": "2026-05-06T16:45:53.299Z",
-        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260506T170000Z_t15": "2026-05-06T16:45:53.302Z",
-        "calendar_alerted_g6f8jrurkdfj4m9jp9b7lt57jg_t15": "2026-05-06T16:50:58.307Z",
-        "calendar_alerted_1nk3sn0pa487ptnbd3epc33m40_20260506T183000Z_t15": "2026-05-06T18:15:58.288Z"
+        "calendar_alerted_0rr37erbs4n7d42sskf81knn2l_t15": "2026-05-07T15:15:48.258Z",
+        "calendar_alerted_2l99orig80he2l5ssguemsohut_20260507T163000Z_t15": "2026-05-07T16:15:48.300Z",
+        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260507T170000Z_t15": "2026-05-07T16:45:48.248Z",
+        "calendar_alerted_inlogkfq5m8tc77li6st4j6m78_20260507T180000Z_t15": "2026-05-07T17:45:48.259Z",
+        "calendar_alerted__6dim8e1m69imabb16osjib9k6ks36b9pccpj2bb4cgo32e9k64o34dpl74_t15": "2026-05-07T20:15:48.234Z"
       }
     }
   },
