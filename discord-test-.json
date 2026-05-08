@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-09T17:32:44.310Z",
+  "updatedAt": "2026-05-07T13:45:13.134Z",
   "createdAt": "2026-04-09T17:25:38.596Z",
   "id": "xkl8N91pBmULbWyr",
   "name": "Discord Test",
@@ -72,7 +72,10 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timezone": "America/New_York",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
   "staticData": null,
   "meta": {
