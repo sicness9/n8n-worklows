@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-04T17:33:52.360Z",
+  "updatedAt": "2026-05-07T13:45:11.672Z",
   "createdAt": "2026-05-04T17:31:07.264Z",
   "id": "NL8DoX4nIgBjWmqk",
   "name": "Personal Assistant - Asana Task Grab",
@@ -118,7 +118,10 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "America/New_York",
+    "callerPolicy": "workflowsFromSameOwner"
   },
   "staticData": null,
   "meta": {
