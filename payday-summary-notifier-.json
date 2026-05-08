@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-09T17:25:21.123Z",
+  "updatedAt": "2026-05-07T13:45:12.242Z",
   "createdAt": "2026-04-03T18:35:21.475Z",
   "id": "mzBSnyoUZgatEhJ9",
   "name": "Payday Summary Notifier",
@@ -354,7 +354,9 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timezone": "America/New_York",
+    "callerPolicy": "workflowsFromSameOwner"
   },
   "staticData": {
     "node:Schedule Trigger": {
