@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-09T18:06:19.977Z",
+  "updatedAt": "2026-05-07T13:45:11.431Z",
   "createdAt": "2026-04-01T19:37:16.544Z",
   "id": "L3imBfTSCaRtnSBI",
   "name": "Overdue Chore Notifier",
@@ -492,7 +492,9 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timezone": "America/New_York",
+    "callerPolicy": "workflowsFromSameOwner"
   },
   "staticData": {
     "node:Schedule Trigger": {
