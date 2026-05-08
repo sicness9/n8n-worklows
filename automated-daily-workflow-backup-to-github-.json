@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-07T20:03:23.741Z",
+  "updatedAt": "2026-05-07T13:45:11.932Z",
   "createdAt": "2026-04-07T16:46:07.640Z",
   "id": "Njc4nCuUG9UboxYc",
   "name": "Automated daily workflow backup to GitHub",
@@ -399,7 +399,10 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timezone": "America/New_York",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
   "staticData": {
     "node:Schedule Trigger": {
