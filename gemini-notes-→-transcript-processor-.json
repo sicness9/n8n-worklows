@@ -1,0 +1,133 @@
+{
+  "updatedAt": "2026-05-07T20:44:11.000Z",
+  "createdAt": "2026-05-07T20:38:07.986Z",
+  "id": "jMkHFehPE5pHKqFX",
+  "name": "Gemini Notes → Transcript Processor",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1wdz4uFo8cyLkaFycHwqMc9AE16n783vb",
+          "cachedResultName": "Gemini Meeting Notes"
+        },
+        "options": {
+          "fileType": "application/vnd.google-apps.document"
+        }
+      },
+      "id": "drive-trigger-001",
+      "name": "New File in Gemini Notes Folder",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "vtLSiv8iZkC78sGr",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "operation": "get",
+        "documentURL": "={{ $json.id }}",
+        "simple": true
+      },
+      "id": "gdocs-read-001",
+      "name": "Read Meeting Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        540,
+        300
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "vtLSiv8iZkC78sGr",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.nelson-torres.dev/webhook/transcript-processor",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { subject: $(\"New File in Gemini Notes Folder\").item.json.name, body: $json.content, from: \"gemini-notes@google.com\" } }}"
+      },
+      "id": "http-post-001",
+      "name": "POST to Transcript Processor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        840,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "New File in Gemini Notes Folder": {
+      "main": [
+        [
+          {
+            "node": "Read Meeting Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Meeting Doc": {
+      "main": [
+        [
+          {
+            "node": "POST to Transcript Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "0b0e32be-e399-4ffa-b3d4-ede91b24674b",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-07T20:38:07.988Z",
+      "createdAt": "2026-05-07T20:38:07.988Z",
+      "role": "workflow:owner",
+      "workflowId": "jMkHFehPE5pHKqFX",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
