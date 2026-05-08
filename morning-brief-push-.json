@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-05-06T21:03:47.173Z",
+  "updatedAt": "2026-05-07T20:01:48.919Z",
   "createdAt": "2026-05-05T22:06:52.817Z",
   "id": "V9nBJmspHOAo5MU5",
   "name": "Morning Brief Push",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -36,7 +36,7 @@
       }
     },
     {
-      "id": "c476cbc8-99c3-4504-9bd6-675f7a2c94ed",
+      "id": "9da37e7b-479e-4b7e-a755-2a3a21da936c",
       "name": "Fetch Asana Tasks",
       "type": "n8n-nodes-base.asana",
       "typeVersion": 1,
@@ -47,17 +47,17 @@
       "parameters": {
         "resource": "task",
         "operation": "getAll",
-        "workspace": "176606469292597",
-        "assignee": "me",
         "returnAll": true,
-        "otherProperties": {
-          "completedSince": "now"
+        "filters": {
+          "workspace": "176606469292597",
+          "assignee": "me",
+          "completed_since": "now"
         }
       },
       "credentials": {
-        "asanaOAuth2Api": {
-          "id": "IhJhkNbbtfrtt5U9",
-          "name": "Asana account"
+        "asanaApi": {
+          "id": "8TkSLWQIQqZBfEWT",
+          "name": "Asana - API Token"
         }
       }
     },
@@ -73,7 +73,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "var today = new Date();\nvar dateStr = today.toISOString().split('T')[0];\nvar dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];\n\nvar tasks = $input.all().map(function(item) { return item.json; });\nvar asanaData = {\n  tasks_due_today: tasks.filter(function(t) { return t.due_on === dateStr; }).map(function(t) { return t.name; }),\n  overdue: tasks.filter(function(t) { return t.due_on && t.due_on < dateStr; }).map(function(t) { return t.name; }),\n  upcoming: tasks.filter(function(t) { return t.due_on && t.due_on > dateStr; }).slice(0, 10).map(function(t) { return t.name + ' (due: ' + t.due_on + ')'; }),\n  no_due_date: tasks.filter(function(t) { return !t.due_on; }).map(function(t) { return t.name; })\n};\nvar slackData = { unread_dms: [], mentions: [], note: 'Slack data not yet connected' };\nvar gmailData = { action_required: [], unread_count: 0, note: 'Gmail data not yet connected' };\n\nvar promptLines = [\n  '# Morning Briefing',\n  '',\n  'Generate a concise morning briefing for Nelson Torres at AdQuadrant.',\n  'Today is ' + dayName + ', ' + dateStr + '.',\n  '',\n  '## Data Sources',\n  '',\n  '### Asana Tasks',\n  JSON.stringify(asanaData),\n  '',\n  '### Slack (last 24h)',\n  JSON.stringify(slackData),\n  '',\n  '### Gmail',\n  JSON.stringify(gmailData),\n  '',\n  '## Output Format',\n  '',\n  '### Needs Action Today',\n  'Ranked by urgency + effort. Include source and brief context.',\n  '',\n  '### On Your Radar',\n  'Due soon, waiting on others, FYI threads worth knowing.',\n  '',\n  '### Inbox Summary',\n  'Slack + email items condensed. Paraphrase, never verbatim.',\n  '',\n  '## Rules',\n  '- Keep under 40 lines total',\n  '- Do not list completed tasks',\n  '- If nothing is urgent, say so',\n  '- Cross-reference Slack/email threads connected to Asana tasks'\n];\nvar systemPrompt = promptLines.join('\\n');\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 2048,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Generate the morning briefing for ' + dayName + ' ' + dateStr + '.'\n  }]\n}}];"
+        "jsCode": "var today = new Date();\nvar dateStr = today.toISOString().split('T')[0];\nvar dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];\n\nvar tasks = $input.all().map(function(item) { return item.json; });\nvar asanaData = {\n  tasks_due_today: tasks.filter(function(t) { return t.due_on === dateStr; }).map(function(t) { return t.name; }),\n  overdue: tasks.filter(function(t) { return t.due_on && t.due_on < dateStr; }).map(function(t) { return t.name; }),\n  upcoming: tasks.filter(function(t) { return t.due_on && t.due_on > dateStr; }).slice(0, 10).map(function(t) { return t.name + ' (due: ' + t.due_on + ')'; }),\n  no_due_date: tasks.filter(function(t) { return !t.due_on; }).map(function(t) { return t.name; })\n};\nvar slackData = { unread_dms: [], mentions: [], note: 'Slack data not yet connected' };\nvar gmailData = { action_required: [], unread_count: 0, note: 'Gmail data not yet connected' };\n\nvar systemPrompt = [\n  '# Morning Briefing',\n  '',\n  'Generate a concise morning briefing for Nelson Torres at AdQuadrant.',\n  'Today is ' + dayName + ', ' + dateStr + '.',\n  '',\n  '## Data Sources',\n  '',\n  '### Asana Tasks',\n  JSON.stringify(asanaData),\n  '',\n  '### Slack (last 24h)',\n  JSON.stringify(slackData),\n  '',\n  '### Gmail',\n  JSON.stringify(gmailData),\n  '',\n  '## Output Format',\n  '',\n  '### Needs Action Today',\n  'Ranked by urgency + effort. Include source and brief context.',\n  '',\n  '### On Your Radar',\n  'Due soon, waiting on others, FYI threads worth knowing.',\n  '',\n  '### Inbox Summary',\n  'Slack + email items condensed. Paraphrase, never verbatim.',\n  '',\n  '## Rules',\n  '- Keep under 40 lines total',\n  '- Do not list completed tasks',\n  '- If nothing is urgent, say so',\n  '- Cross-reference Slack/email threads connected to Asana tasks'\n].join('\\n');\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 2048,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Generate the morning briefing for ' + dayName + ' ' + dateStr + '.'\n  }]\n}}];"
       }
     },
     {
@@ -128,10 +128,10 @@
       }
     },
     {
-      "id": "78ad31c6-1a8b-4a4e-8efe-420fd314669a",
+      "id": "e961011c-a84a-4407-8c07-e54d84f3b5fc",
       "name": "Morning Brief DM",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.4,
       "position": [
         1620,
         400
@@ -141,20 +141,21 @@
         "operation": "post",
         "select": "channel",
         "channelId": {
-          "value": "U0AS1DLUKQV",
           "__rl": true,
-          "mode": "id"
+          "mode": "id",
+          "value": "U0AS1DLUKQV"
         },
-        "text": "={{ $json.brief || $json.content || 'Morning brief ready.' }}",
+        "messageType": "text",
+        "text": "={{ $json.brief || $json.content || \"Morning brief ready.\" }}",
         "otherOptions": {}
       },
+      "webhookId": "ed804a76-1d20-4ef2-ae72-f1876769c237",
       "credentials": {
         "slackApi": {
           "id": "ie6DnUT6N6lLxV3B",
           "name": "Slack account"
         }
-      },
-      "webhookId": "533d51a0-1a82-418e-89be-09cec6816e57"
+      }
     }
   ],
   "connections": {
@@ -217,14 +218,21 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": true,
+    "timezone": "America/New_York"
   },
-  "staticData": null,
-  "meta": null,
+  "staticData": {
+    "node:Weekdays 7 AM": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true
+  },
   "pinData": null,
-  "versionId": "6697a30f-2579-45fb-9229-0fd1a8c34a0b",
-  "activeVersionId": null,
-  "triggerCount": 0,
+  "versionId": "77bb4ea2-4a58-4d4b-a8c0-7008eb9294bd",
+  "activeVersionId": "77bb4ea2-4a58-4d4b-a8c0-7008eb9294bd",
+  "triggerCount": 1,
   "shared": [
     {
       "updatedAt": "2026-05-05T22:06:52.818Z",
@@ -234,6 +242,225 @@
       "projectId": "TxCYhXtkt9tpKOLj"
     }
   ],
-  "activeVersion": null,
+  "activeVersion": {
+    "updatedAt": "2026-05-07T20:02:14.000Z",
+    "createdAt": "2026-05-07T20:01:48.920Z",
+    "versionId": "77bb4ea2-4a58-4d4b-a8c0-7008eb9294bd",
+    "workflowId": "V9nBJmspHOAo5MU5",
+    "nodes": [
+      {
+        "id": "19a56281-dec4-4231-bd4b-d36a8e9c4f59",
+        "name": "Weekdays 7 AM",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          240,
+          400
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "weeks",
+                "weeksInterval": 1,
+                "triggerAtDay": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "triggerAtHour": 7,
+                "triggerAtMinute": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "9da37e7b-479e-4b7e-a755-2a3a21da936c",
+        "name": "Fetch Asana Tasks",
+        "type": "n8n-nodes-base.asana",
+        "typeVersion": 1,
+        "position": [
+          500,
+          400
+        ],
+        "parameters": {
+          "resource": "task",
+          "operation": "getAll",
+          "returnAll": true,
+          "filters": {
+            "workspace": "176606469292597",
+            "assignee": "me",
+            "completed_since": "now"
+          }
+        },
+        "credentials": {
+          "asanaApi": {
+            "id": "8TkSLWQIQqZBfEWT",
+            "name": "Asana - API Token"
+          }
+        }
+      },
+      {
+        "id": "a5fe7aa0-baa9-41e8-ae86-679bfe91fd0e",
+        "name": "Build Brief Request",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          780,
+          400
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "var today = new Date();\nvar dateStr = today.toISOString().split('T')[0];\nvar dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];\n\nvar tasks = $input.all().map(function(item) { return item.json; });\nvar asanaData = {\n  tasks_due_today: tasks.filter(function(t) { return t.due_on === dateStr; }).map(function(t) { return t.name; }),\n  overdue: tasks.filter(function(t) { return t.due_on && t.due_on < dateStr; }).map(function(t) { return t.name; }),\n  upcoming: tasks.filter(function(t) { return t.due_on && t.due_on > dateStr; }).slice(0, 10).map(function(t) { return t.name + ' (due: ' + t.due_on + ')'; }),\n  no_due_date: tasks.filter(function(t) { return !t.due_on; }).map(function(t) { return t.name; })\n};\nvar slackData = { unread_dms: [], mentions: [], note: 'Slack data not yet connected' };\nvar gmailData = { action_required: [], unread_count: 0, note: 'Gmail data not yet connected' };\n\nvar systemPrompt = [\n  '# Morning Briefing',\n  '',\n  'Generate a concise morning briefing for Nelson Torres at AdQuadrant.',\n  'Today is ' + dayName + ', ' + dateStr + '.',\n  '',\n  '## Data Sources',\n  '',\n  '### Asana Tasks',\n  JSON.stringify(asanaData),\n  '',\n  '### Slack (last 24h)',\n  JSON.stringify(slackData),\n  '',\n  '### Gmail',\n  JSON.stringify(gmailData),\n  '',\n  '## Output Format',\n  '',\n  '### Needs Action Today',\n  'Ranked by urgency + effort. Include source and brief context.',\n  '',\n  '### On Your Radar',\n  'Due soon, waiting on others, FYI threads worth knowing.',\n  '',\n  '### Inbox Summary',\n  'Slack + email items condensed. Paraphrase, never verbatim.',\n  '',\n  '## Rules',\n  '- Keep under 40 lines total',\n  '- Do not list completed tasks',\n  '- If nothing is urgent, say so',\n  '- Cross-reference Slack/email threads connected to Asana tasks'\n].join('\\n');\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 2048,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Generate the morning briefing for ' + dayName + ' ' + dateStr + '.'\n  }]\n}}];"
+        }
+      },
+      {
+        "id": "73174036-b27e-4ed8-9fa9-86fc1f980c34",
+        "name": "Generate Brief via Claude",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1060,
+          400
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "anthropic-version",
+                "value": "2023-06-01"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ $json }}"
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "qjdLurgn1OANVO3L",
+            "name": "Header Auth account"
+          }
+        }
+      },
+      {
+        "id": "1ebabddc-269e-43ab-bd46-efeec15fc9fa",
+        "name": "Parse Brief Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1340,
+          400
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const response = $input.first().json;\nlet briefText;\ntry {\n  briefText = response.content[0].text;\n} catch (e) {\n  briefText = 'Error generating brief: ' + e.message;\n}\nreturn [{ json: { brief: briefText, generated_at: new Date().toISOString() } }];"
+        }
+      },
+      {
+        "id": "e961011c-a84a-4407-8c07-e54d84f3b5fc",
+        "name": "Morning Brief DM",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          1620,
+          400
+        ],
+        "parameters": {
+          "resource": "message",
+          "operation": "post",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "U0AS1DLUKQV"
+          },
+          "messageType": "text",
+          "text": "={{ $json.brief || $json.content || \"Morning brief ready.\" }}",
+          "otherOptions": {}
+        },
+        "webhookId": "ed804a76-1d20-4ef2-ae72-f1876769c237",
+        "credentials": {
+          "slackApi": {
+            "id": "ie6DnUT6N6lLxV3B",
+            "name": "Slack account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Weekdays 7 AM": {
+        "main": [
+          [
+            {
+              "node": "Fetch Asana Tasks",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Asana Tasks": {
+        "main": [
+          [
+            {
+              "node": "Build Brief Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Brief Request": {
+        "main": [
+          [
+            {
+              "node": "Generate Brief via Claude",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate Brief via Claude": {
+        "main": [
+          [
+            {
+              "node": "Parse Brief Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Brief Response": {
+        "main": [
+          [
+            {
+              "node": "Morning Brief DM",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": "Version 77bb4ea2",
+    "description": "",
+    "autosaved": false
+  },
   "tags": []
 }
