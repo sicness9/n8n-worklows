@@ -1,0 +1,363 @@
+{
+  "updatedAt": "2026-05-07T20:52:36.336Z",
+  "createdAt": "2026-05-07T20:34:16.130Z",
+  "id": "WWkSQYAp5Fmuj1bw",
+  "name": "Gemini Notes Drive Watcher",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1wdz4uFo8cyLkaFycHwqMc9AE16n783vb"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "name": "Watch Gemini Notes Folder",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        304
+      ],
+      "id": "c62917a2-5bbd-415d-ad63-3213e3362261",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "HJ8ywOynfTLOofyY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData(\"global\");\nconst processedIds = staticData.processedIds || [];\nconst results = [];\n\nfor (const item of $input.all()) {\n  const fileId = item.json.id;\n  const mimeType = item.json.mimeType || \"\";\n\n  if (mimeType !== \"application/vnd.google-apps.document\") continue;\n\n  if (!processedIds.includes(fileId)) {\n    processedIds.push(fileId);\n    results.push(item);\n  }\n}\n\nstaticData.processedIds = processedIds.length > 500 ? processedIds.slice(-500) : processedIds;\nreturn results;"
+      },
+      "name": "Dedup by File ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        304
+      ],
+      "id": "5d0e0900-d1d5-4ef5-b082-83a2e5213e58"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain"
+            }
+          }
+        }
+      },
+      "name": "Export Doc as Plain Text",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        720,
+        304
+      ],
+      "id": "e2744fe5-281d-41ab-9502-e9e03b6b6800",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "HJ8ywOynfTLOofyY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  let text = \"\";\n  try {\n    const buffer = await this.helpers.getBinaryDataBuffer(i, 'data');\n    text = buffer.toString('utf-8');\n  } catch (e) {\n    if (item.binary && item.binary.data && item.binary.data.data) {\n      text = Buffer.from(item.binary.data.data, 'base64').toString('utf-8');\n    }\n  }\n  results.push({\n    json: {\n      subject: item.json.name || \"Unknown Meeting\",\n      body: text,\n      from: \"gemini-notes@google.com\"\n    }\n  });\n}\nreturn results;"
+      },
+      "name": "Extract Text from Doc",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        304
+      ],
+      "id": "85252958-d94a-42c3-9878-24022db6976e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.nelson-torres.dev/webhook/transcript-processor",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "name": "POST to Transcript Processor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1200,
+        304
+      ],
+      "id": "7e1f9bcd-18aa-4ccb-8118-6f624ef15edd"
+    }
+  ],
+  "connections": {
+    "Watch Gemini Notes Folder": {
+      "main": [
+        [
+          {
+            "node": "Dedup by File ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedup by File ID": {
+      "main": [
+        [
+          {
+            "node": "Export Doc as Plain Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Export Doc as Plain Text": {
+      "main": [
+        [
+          {
+            "node": "Extract Text from Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text from Doc": {
+      "main": [
+        [
+          {
+            "node": "POST to Transcript Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Watch Gemini Notes Folder": {
+      "lastTimeChecked": "2026-05-07T20:53:57Z"
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c0ffa371-6b67-452e-a26d-070e08e73e3c",
+  "activeVersionId": "c0ffa371-6b67-452e-a26d-070e08e73e3c",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-05-07T20:34:16.132Z",
+      "createdAt": "2026-05-07T20:34:16.132Z",
+      "role": "workflow:owner",
+      "workflowId": "WWkSQYAp5Fmuj1bw",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-05-07T20:53:57.000Z",
+    "createdAt": "2026-05-07T20:52:36.336Z",
+    "versionId": "c0ffa371-6b67-452e-a26d-070e08e73e3c",
+    "workflowId": "WWkSQYAp5Fmuj1bw",
+    "nodes": [
+      {
+        "parameters": {
+          "pollTimes": {
+            "item": [
+              {
+                "mode": "everyX",
+                "value": 5,
+                "unit": "minutes"
+              }
+            ]
+          },
+          "triggerOn": "specificFolder",
+          "folderToWatch": {
+            "__rl": true,
+            "mode": "id",
+            "value": "1wdz4uFo8cyLkaFycHwqMc9AE16n783vb"
+          },
+          "event": "fileCreated",
+          "options": {}
+        },
+        "name": "Watch Gemini Notes Folder",
+        "type": "n8n-nodes-base.googleDriveTrigger",
+        "typeVersion": 1,
+        "position": [
+          240,
+          304
+        ],
+        "id": "c62917a2-5bbd-415d-ad63-3213e3362261",
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "HJ8ywOynfTLOofyY",
+            "name": "Google Drive account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const staticData = $getWorkflowStaticData(\"global\");\nconst processedIds = staticData.processedIds || [];\nconst results = [];\n\nfor (const item of $input.all()) {\n  const fileId = item.json.id;\n  const mimeType = item.json.mimeType || \"\";\n\n  if (mimeType !== \"application/vnd.google-apps.document\") continue;\n\n  if (!processedIds.includes(fileId)) {\n    processedIds.push(fileId);\n    results.push(item);\n  }\n}\n\nstaticData.processedIds = processedIds.length > 500 ? processedIds.slice(-500) : processedIds;\nreturn results;"
+        },
+        "name": "Dedup by File ID",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          480,
+          304
+        ],
+        "id": "5d0e0900-d1d5-4ef5-b082-83a2e5213e58"
+      },
+      {
+        "parameters": {
+          "operation": "download",
+          "fileId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.id }}"
+          },
+          "options": {
+            "googleFileConversion": {
+              "conversion": {
+                "docsToFormat": "text/plain"
+              }
+            }
+          }
+        },
+        "name": "Export Doc as Plain Text",
+        "type": "n8n-nodes-base.googleDrive",
+        "typeVersion": 3,
+        "position": [
+          720,
+          304
+        ],
+        "id": "e2744fe5-281d-41ab-9502-e9e03b6b6800",
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "HJ8ywOynfTLOofyY",
+            "name": "Google Drive account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $input.all();\nconst results = [];\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  let text = \"\";\n  try {\n    const buffer = await this.helpers.getBinaryDataBuffer(i, 'data');\n    text = buffer.toString('utf-8');\n  } catch (e) {\n    if (item.binary && item.binary.data && item.binary.data.data) {\n      text = Buffer.from(item.binary.data.data, 'base64').toString('utf-8');\n    }\n  }\n  results.push({\n    json: {\n      subject: item.json.name || \"Unknown Meeting\",\n      body: text,\n      from: \"gemini-notes@google.com\"\n    }\n  });\n}\nreturn results;"
+        },
+        "name": "Extract Text from Doc",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          960,
+          304
+        ],
+        "id": "85252958-d94a-42c3-9878-24022db6976e"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://n8n.nelson-torres.dev/webhook/transcript-processor",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json) }}",
+          "options": {}
+        },
+        "name": "POST to Transcript Processor",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1200,
+          304
+        ],
+        "id": "7e1f9bcd-18aa-4ccb-8118-6f624ef15edd"
+      }
+    ],
+    "connections": {
+      "Watch Gemini Notes Folder": {
+        "main": [
+          [
+            {
+              "node": "Dedup by File ID",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Dedup by File ID": {
+        "main": [
+          [
+            {
+              "node": "Export Doc as Plain Text",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Export Doc as Plain Text": {
+        "main": [
+          [
+            {
+              "node": "Extract Text from Doc",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Text from Doc": {
+        "main": [
+          [
+            {
+              "node": "POST to Transcript Processor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": "Version c0ffa371",
+    "description": "",
+    "autosaved": true
+  },
+  "tags": []
+}
