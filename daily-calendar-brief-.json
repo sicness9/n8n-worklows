@@ -1,0 +1,290 @@
+{
+  "updatedAt": "2026-05-07T13:45:12.871Z",
+  "createdAt": "2026-05-07T05:12:59.479Z",
+  "id": "vgN0q3hjSJIQJHCd",
+  "name": "Daily Calendar Brief",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "186ec38f-c264-4d70-95fc-7e797205025c",
+      "name": "Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        400
+      ]
+    },
+    {
+      "id": "003aafa9-d982-4a2e-a461-797fc1dd5037",
+      "name": "Fetch Today Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        520,
+        400
+      ],
+      "parameters": {
+        "resource": "event",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "nelson.torres@adquadrant.com"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $now.startOf(\"day\").toISO() }}",
+        "timeMax": "={{ $now.endOf(\"day\").toISO() }}",
+        "options": {
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "37dh7UZDNrM2RQ4L",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "3372522d-e5d5-46cd-ba95-9543e21f0c30",
+      "name": "Format Calendar Brief",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "var events = $input.all().map(function(item) { return item.json; });\nvar now = new Date();\n\nvar realEvents = events.filter(function(e) {\n  if (!e.start || !e.start.dateTime) return false;\n  if (e.status === 'cancelled') return false;\n  var attendees = e.attendees || [];\n  var others = attendees.filter(function(a) {\n    return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n  });\n  if (attendees.length > 0 && others.length === 0) return false;\n  return true;\n});\n\nrealEvents.sort(function(a, b) {\n  return new Date(a.start.dateTime) - new Date(b.start.dateTime);\n});\n\nvar lines = [];\nlines.push('*Calendar Today (' + now.toISOString().split('T')[0] + ')*');\nlines.push('');\n\nif (realEvents.length === 0) {\n  lines.push('No meetings today. Deep work day.');\n} else {\n  realEvents.forEach(function(e) {\n    var start = new Date(e.start.dateTime);\n    var end = new Date(e.end.dateTime);\n    var startStr = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var endStr = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var duration = Math.round((end - start) / (1000 * 60));\n\n    var attendees = (e.attendees || []).filter(function(a) {\n      return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n    });\n    var attendeeStr = attendees.map(function(a) {\n      return a.displayName || a.email.split('@')[0];\n    }).join(', ');\n\n    var joinLink = e.hangoutLink || (e.conferenceData && e.conferenceData.entryPoints && e.conferenceData.entryPoints[0] ? e.conferenceData.entryPoints[0].uri : '');\n\n    var minutesUntil = Math.round((start - now) / (1000 * 60));\n    var timeTag = '';\n    if (minutesUntil > 0 && minutesUntil <= 30) timeTag = ' (starting soon)';\n    else if (minutesUntil <= 0 && minutesUntil > -duration) timeTag = ' (in progress)';\n\n    lines.push('\\u2022 *' + startStr + ' \\u2013 ' + endStr + '* (' + duration + 'min)' + timeTag);\n    lines.push('  ' + e.summary);\n    if (attendeeStr) lines.push('  With: ' + attendeeStr);\n    if (joinLink) lines.push('  Join: ' + joinLink);\n    lines.push('');\n  });\n\n  var totalMeetingMin = realEvents.reduce(function(sum, e) {\n    return sum + Math.round((new Date(e.end.dateTime) - new Date(e.start.dateTime)) / (1000 * 60));\n  }, 0);\n  lines.push('_' + realEvents.length + ' meetings, ' + Math.round(totalMeetingMin / 60 * 10) / 10 + 'h total_');\n}\n\nreturn [{ json: {\n  calendar_section: lines.join('\\n'),\n  event_count: realEvents.length,\n  events: realEvents.map(function(e) {\n    return {\n      id: e.id,\n      summary: e.summary,\n      start: e.start.dateTime,\n      end: e.end.dateTime,\n      attendees: (e.attendees || []).map(function(a) { return a.email; })\n    };\n  })\n}}];"
+      }
+    },
+    {
+      "id": "36d5382d-8683-4154-8842-af3a85d696b5",
+      "name": "Send Calendar Brief",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1100,
+        400
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "U0AS1DLUKQV"
+        },
+        "messageType": "text",
+        "text": "={{ $json.calendar_section + \"\\n\\n_\\u2726 Iris \\u2014 Nelson's personal AI assistant_\" }}",
+        "otherOptions": {}
+      },
+      "webhookId": "968a32b4-5650-4b23-9c14-a7a324ed7466",
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Today Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Today Events": {
+      "main": [
+        [
+          {
+            "node": "Format Calendar Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Calendar Brief": {
+      "main": [
+        [
+          {
+            "node": "Send Calendar Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/New_York",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true
+  },
+  "pinData": null,
+  "versionId": "64c0762f-6e8f-4a01-9f42-cd754cfcfd82",
+  "activeVersionId": "64c0762f-6e8f-4a01-9f42-cd754cfcfd82",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-07T05:12:59.481Z",
+      "createdAt": "2026-05-07T05:12:59.481Z",
+      "role": "workflow:owner",
+      "workflowId": "vgN0q3hjSJIQJHCd",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-05-07T05:12:59.481Z",
+    "createdAt": "2026-05-07T05:12:59.481Z",
+    "versionId": "64c0762f-6e8f-4a01-9f42-cd754cfcfd82",
+    "workflowId": "vgN0q3hjSJIQJHCd",
+    "nodes": [
+      {
+        "id": "186ec38f-c264-4d70-95fc-7e797205025c",
+        "name": "Trigger",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          240,
+          400
+        ]
+      },
+      {
+        "id": "003aafa9-d982-4a2e-a461-797fc1dd5037",
+        "name": "Fetch Today Events",
+        "type": "n8n-nodes-base.googleCalendar",
+        "typeVersion": 1.3,
+        "position": [
+          520,
+          400
+        ],
+        "parameters": {
+          "resource": "event",
+          "operation": "getAll",
+          "calendar": {
+            "__rl": true,
+            "mode": "id",
+            "value": "nelson.torres@adquadrant.com"
+          },
+          "returnAll": true,
+          "timeMin": "={{ $now.startOf(\"day\").toISO() }}",
+          "timeMax": "={{ $now.endOf(\"day\").toISO() }}",
+          "options": {
+            "singleEvents": true,
+            "orderBy": "startTime"
+          }
+        },
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "37dh7UZDNrM2RQ4L",
+            "name": "Google Calendar account"
+          }
+        }
+      },
+      {
+        "id": "3372522d-e5d5-46cd-ba95-9543e21f0c30",
+        "name": "Format Calendar Brief",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          820,
+          400
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "var events = $input.all().map(function(item) { return item.json; });\nvar now = new Date();\n\nvar realEvents = events.filter(function(e) {\n  if (!e.start || !e.start.dateTime) return false;\n  if (e.status === 'cancelled') return false;\n  var attendees = e.attendees || [];\n  var others = attendees.filter(function(a) {\n    return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n  });\n  if (attendees.length > 0 && others.length === 0) return false;\n  return true;\n});\n\nrealEvents.sort(function(a, b) {\n  return new Date(a.start.dateTime) - new Date(b.start.dateTime);\n});\n\nvar lines = [];\nlines.push('*Calendar Today (' + now.toISOString().split('T')[0] + ')*');\nlines.push('');\n\nif (realEvents.length === 0) {\n  lines.push('No meetings today. Deep work day.');\n} else {\n  realEvents.forEach(function(e) {\n    var start = new Date(e.start.dateTime);\n    var end = new Date(e.end.dateTime);\n    var startStr = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var endStr = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var duration = Math.round((end - start) / (1000 * 60));\n\n    var attendees = (e.attendees || []).filter(function(a) {\n      return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n    });\n    var attendeeStr = attendees.map(function(a) {\n      return a.displayName || a.email.split('@')[0];\n    }).join(', ');\n\n    var joinLink = e.hangoutLink || (e.conferenceData && e.conferenceData.entryPoints && e.conferenceData.entryPoints[0] ? e.conferenceData.entryPoints[0].uri : '');\n\n    var minutesUntil = Math.round((start - now) / (1000 * 60));\n    var timeTag = '';\n    if (minutesUntil > 0 && minutesUntil <= 30) timeTag = ' (starting soon)';\n    else if (minutesUntil <= 0 && minutesUntil > -duration) timeTag = ' (in progress)';\n\n    lines.push('\\u2022 *' + startStr + ' \\u2013 ' + endStr + '* (' + duration + 'min)' + timeTag);\n    lines.push('  ' + e.summary);\n    if (attendeeStr) lines.push('  With: ' + attendeeStr);\n    if (joinLink) lines.push('  Join: ' + joinLink);\n    lines.push('');\n  });\n\n  var totalMeetingMin = realEvents.reduce(function(sum, e) {\n    return sum + Math.round((new Date(e.end.dateTime) - new Date(e.start.dateTime)) / (1000 * 60));\n  }, 0);\n  lines.push('_' + realEvents.length + ' meetings, ' + Math.round(totalMeetingMin / 60 * 10) / 10 + 'h total_');\n}\n\nreturn [{ json: {\n  calendar_section: lines.join('\\n'),\n  event_count: realEvents.length,\n  events: realEvents.map(function(e) {\n    return {\n      id: e.id,\n      summary: e.summary,\n      start: e.start.dateTime,\n      end: e.end.dateTime,\n      attendees: (e.attendees || []).map(function(a) { return a.email; })\n    };\n  })\n}}];"
+        }
+      },
+      {
+        "id": "36d5382d-8683-4154-8842-af3a85d696b5",
+        "name": "Send Calendar Brief",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          1100,
+          400
+        ],
+        "parameters": {
+          "resource": "message",
+          "operation": "post",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "U0AS1DLUKQV"
+          },
+          "messageType": "text",
+          "text": "={{ $json.calendar_section + \"\\n\\n_\\u2726 Iris \\u2014 Nelson's personal AI assistant_\" }}",
+          "otherOptions": {}
+        },
+        "webhookId": "968a32b4-5650-4b23-9c14-a7a324ed7466",
+        "credentials": {
+          "slackApi": {
+            "id": "ie6DnUT6N6lLxV3B",
+            "name": "Slack account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Trigger": {
+        "main": [
+          [
+            {
+              "node": "Fetch Today Events",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Today Events": {
+        "main": [
+          [
+            {
+              "node": "Format Calendar Brief",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Calendar Brief": {
+        "main": [
+          [
+            {
+              "node": "Send Calendar Brief",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}
