@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-07T20:01:48.919Z",
+  "updatedAt": "2026-05-08T13:15:01.446Z",
   "createdAt": "2026-05-05T22:06:52.817Z",
   "id": "V9nBJmspHOAo5MU5",
   "name": "Morning Brief Push",
@@ -51,7 +51,7 @@
         "filters": {
           "workspace": "176606469292597",
           "assignee": "me",
-          "completed_since": "now"
+          "completed_since": "={{ $now.toISO() }}"
         }
       },
       "credentials": {
@@ -230,8 +230,8 @@
     "aiBuilderAssisted": true
   },
   "pinData": null,
-  "versionId": "77bb4ea2-4a58-4d4b-a8c0-7008eb9294bd",
-  "activeVersionId": "77bb4ea2-4a58-4d4b-a8c0-7008eb9294bd",
+  "versionId": "ac764a6f-8a69-4255-aacd-5f60d1e83892",
+  "activeVersionId": "ac764a6f-8a69-4255-aacd-5f60d1e83892",
   "triggerCount": 1,
   "shared": [
     {
@@ -243,9 +243,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-07T20:02:14.000Z",
-    "createdAt": "2026-05-07T20:01:48.920Z",
-    "versionId": "77bb4ea2-4a58-4d4b-a8c0-7008eb9294bd",
+    "updatedAt": "2026-05-08T13:15:01.446Z",
+    "createdAt": "2026-05-08T13:15:01.446Z",
+    "versionId": "ac764a6f-8a69-4255-aacd-5f60d1e83892",
     "workflowId": "V9nBJmspHOAo5MU5",
     "nodes": [
       {
@@ -293,7 +293,7 @@
           "filters": {
             "workspace": "176606469292597",
             "assignee": "me",
-            "completed_since": "now"
+            "completed_since": "={{ $now.toISO() }}"
           }
         },
         "credentials": {
@@ -458,8 +458,8 @@
       }
     },
     "authors": "Nelson Torres",
-    "name": "Version 77bb4ea2",
-    "description": "",
+    "name": null,
+    "description": null,
     "autosaved": false
   },
   "tags": []
