@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-07T20:50:34.121Z",
+  "updatedAt": "2026-05-08T16:43:36.549Z",
   "createdAt": "2026-05-07T20:14:47.161Z",
   "id": "syG3CHLb88W8zkrx",
   "name": "Calendar Confirm Handler",
@@ -240,7 +240,7 @@
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
     "timezone": "America/New_York",
-    "availableInMCP": false
+    "availableInMCP": true
   },
   "staticData": null,
   "meta": null,
