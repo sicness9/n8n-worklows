@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-07T13:33:50.201Z",
+  "updatedAt": "2026-05-08T12:44:51.834Z",
   "createdAt": "2026-05-05T22:06:52.498Z",
   "id": "BEbTiKeubM88NGOO",
   "name": "Transcript Processor",
@@ -85,7 +85,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const response = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.heldItems) staticData.heldItems = [];\n\nlet parsed;\ntry {\n  const text = response.content[0].text;\n  parsed = JSON.parse(text);\n} catch (e) {\n  return [{ json: { error: true, message: e.message, high_tasks: [], medium_held: 0, meeting_title: 'Parse Error' } }];\n}\n\nconst highTasks = [];\nconst mediumTasks = [];\nconst tasks = parsed.tasks || [];\n\nfor (var i = 0; i < tasks.length; i++) {\n  var task = tasks[i];\n  if (task.confidence === 'high') {\n    highTasks.push(task);\n  } else if (task.confidence === 'medium') {\n    mediumTasks.push(task);\n    staticData.heldItems.push({\n      title: task.title,\n      meeting: parsed.meeting_title || 'Unknown',\n      stored_at: new Date().toISOString()\n    });\n  }\n}\n\nvar highTaskTitles = highTasks.map(function(t) { return t.title; });\nvar slackMessage = 'Processed: ' + (parsed.meeting_title || 'Unknown Meeting') + '\\n' +\n  'Would create ' + highTasks.length + ' tasks in Asana\\n';\nfor (var j = 0; j < highTaskTitles.length; j++) {\n  slackMessage += '  - ' + highTaskTitles[j] + '\\n';\n}\nslackMessage += 'Held ' + mediumTasks.length + ' items for tonight digest';\n\nreturn [{ json: {\n  meeting_title: parsed.meeting_title || 'Unknown',\n  date: parsed.date,\n  attendees: parsed.attendees || [],\n  decisions: parsed.decisions || [],\n  high_tasks: highTasks,\n  medium_held: mediumTasks.length,\n  total_held_in_store: staticData.heldItems.length,\n  slack_message: slackMessage\n} }];"
+        "jsCode": "const response = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.heldItems) staticData.heldItems = [];\n\nlet parsed;\ntry {\n  let text = response.content[0].text;\n  text = text.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\n  parsed = JSON.parse(text);\n} catch (e) {\n  return [{ json: { error: true, message: e.message, high_tasks: [], medium_held: 0, meeting_title: 'Parse Error' } }];\n}\n\nconst highTasks = [];\nconst mediumTasks = [];\nconst tasks = parsed.tasks || [];\n\nfor (var i = 0; i < tasks.length; i++) {\n  var task = tasks[i];\n  if (task.confidence === 'high') {\n    highTasks.push(task);\n  } else if (task.confidence === 'medium') {\n    mediumTasks.push(task);\n    staticData.heldItems.push({\n      title: task.title,\n      meeting: parsed.meeting_title || 'Unknown',\n      stored_at: new Date().toISOString()\n    });\n  }\n}\n\nvar highTaskTitles = highTasks.map(function(t) { return t.title; });\nvar slackMessage = 'Processed: ' + (parsed.meeting_title || 'Unknown Meeting') + '\\n' +\n  'Would create ' + highTasks.length + ' tasks in Asana\\n';\nfor (var j = 0; j < highTaskTitles.length; j++) {\n  slackMessage += '  - ' + highTaskTitles[j] + '\\n';\n}\nslackMessage += 'Held ' + mediumTasks.length + ' items for tonight digest';\n\nreturn [{ json: {\n  meeting_title: parsed.meeting_title || 'Unknown',\n  date: parsed.date,\n  attendees: parsed.attendees || [],\n  decisions: parsed.decisions || [],\n  high_tasks: highTasks,\n  medium_held: mediumTasks.length,\n  total_held_in_store: staticData.heldItems.length,\n  slack_message: slackMessage\n} }];"
       }
     },
     {
@@ -138,7 +138,7 @@
           "__rl": true,
           "mode": "id"
         },
-        "text": "={{ '\\ud83d\\udcdd Processed: '+($json.meeting_title||'Meeting')+'\\n\\u2705 Created '+($json.auto_created||0)+' task(s) in Asana'+'\\n\\u23f8\\ufe0f Held '+($json.held_count||0)+' item(s) for 7 PM digest' }}",
+        "text": "={{ '📝 Processed: '+($('Parse and Classify Tasks').first().json.meeting_title||'Meeting')+'\\n✅ Created '+(($('Parse and Classify Tasks').first().json.high_tasks||[]).length)+' task(s) in Asana'+'\\n⏸️ Held '+($('Parse and Classify Tasks').first().json.medium_held||0)+' item(s) for 7 PM digest' }}",
         "otherOptions": {}
       },
       "credentials": {
@@ -370,8 +370,8 @@
   },
   "meta": null,
   "pinData": null,
-  "versionId": "75f7df4c-468b-4918-af32-da26c450cc3a",
-  "activeVersionId": "75f7df4c-468b-4918-af32-da26c450cc3a",
+  "versionId": "73a0f742-c759-492e-848c-3a3ca642b410",
+  "activeVersionId": "73a0f742-c759-492e-848c-3a3ca642b410",
   "triggerCount": 2,
   "shared": [
     {
@@ -383,9 +383,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-06T16:47:55.533Z",
-    "createdAt": "2026-05-06T16:47:55.533Z",
-    "versionId": "75f7df4c-468b-4918-af32-da26c450cc3a",
+    "updatedAt": "2026-05-08T12:44:51.835Z",
+    "createdAt": "2026-05-08T12:44:51.835Z",
+    "versionId": "73a0f742-c759-492e-848c-3a3ca642b410",
     "workflowId": "BEbTiKeubM88NGOO",
     "nodes": [
       {
@@ -467,7 +467,7 @@
         "parameters": {
           "mode": "runOnceForAllItems",
           "language": "javaScript",
-          "jsCode": "const response = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.heldItems) staticData.heldItems = [];\n\nlet parsed;\ntry {\n  const text = response.content[0].text;\n  parsed = JSON.parse(text);\n} catch (e) {\n  return [{ json: { error: true, message: e.message, high_tasks: [], medium_held: 0, meeting_title: 'Parse Error' } }];\n}\n\nconst highTasks = [];\nconst mediumTasks = [];\nconst tasks = parsed.tasks || [];\n\nfor (var i = 0; i < tasks.length; i++) {\n  var task = tasks[i];\n  if (task.confidence === 'high') {\n    highTasks.push(task);\n  } else if (task.confidence === 'medium') {\n    mediumTasks.push(task);\n    staticData.heldItems.push({\n      title: task.title,\n      meeting: parsed.meeting_title || 'Unknown',\n      stored_at: new Date().toISOString()\n    });\n  }\n}\n\nvar highTaskTitles = highTasks.map(function(t) { return t.title; });\nvar slackMessage = 'Processed: ' + (parsed.meeting_title || 'Unknown Meeting') + '\\n' +\n  'Would create ' + highTasks.length + ' tasks in Asana\\n';\nfor (var j = 0; j < highTaskTitles.length; j++) {\n  slackMessage += '  - ' + highTaskTitles[j] + '\\n';\n}\nslackMessage += 'Held ' + mediumTasks.length + ' items for tonight digest';\n\nreturn [{ json: {\n  meeting_title: parsed.meeting_title || 'Unknown',\n  date: parsed.date,\n  attendees: parsed.attendees || [],\n  decisions: parsed.decisions || [],\n  high_tasks: highTasks,\n  medium_held: mediumTasks.length,\n  total_held_in_store: staticData.heldItems.length,\n  slack_message: slackMessage\n} }];"
+          "jsCode": "const response = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.heldItems) staticData.heldItems = [];\n\nlet parsed;\ntry {\n  let text = response.content[0].text;\n  text = text.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\n  parsed = JSON.parse(text);\n} catch (e) {\n  return [{ json: { error: true, message: e.message, high_tasks: [], medium_held: 0, meeting_title: 'Parse Error' } }];\n}\n\nconst highTasks = [];\nconst mediumTasks = [];\nconst tasks = parsed.tasks || [];\n\nfor (var i = 0; i < tasks.length; i++) {\n  var task = tasks[i];\n  if (task.confidence === 'high') {\n    highTasks.push(task);\n  } else if (task.confidence === 'medium') {\n    mediumTasks.push(task);\n    staticData.heldItems.push({\n      title: task.title,\n      meeting: parsed.meeting_title || 'Unknown',\n      stored_at: new Date().toISOString()\n    });\n  }\n}\n\nvar highTaskTitles = highTasks.map(function(t) { return t.title; });\nvar slackMessage = 'Processed: ' + (parsed.meeting_title || 'Unknown Meeting') + '\\n' +\n  'Would create ' + highTasks.length + ' tasks in Asana\\n';\nfor (var j = 0; j < highTaskTitles.length; j++) {\n  slackMessage += '  - ' + highTaskTitles[j] + '\\n';\n}\nslackMessage += 'Held ' + mediumTasks.length + ' items for tonight digest';\n\nreturn [{ json: {\n  meeting_title: parsed.meeting_title || 'Unknown',\n  date: parsed.date,\n  attendees: parsed.attendees || [],\n  decisions: parsed.decisions || [],\n  high_tasks: highTasks,\n  medium_held: mediumTasks.length,\n  total_held_in_store: staticData.heldItems.length,\n  slack_message: slackMessage\n} }];"
         }
       },
       {
@@ -520,7 +520,7 @@
             "__rl": true,
             "mode": "id"
           },
-          "text": "={{ '\\ud83d\\udcdd Processed: '+($json.meeting_title||'Meeting')+'\\n\\u2705 Created '+($json.auto_created||0)+' task(s) in Asana'+'\\n\\u23f8\\ufe0f Held '+($json.held_count||0)+' item(s) for 7 PM digest' }}",
+          "text": "={{ '📝 Processed: '+($('Parse and Classify Tasks').first().json.meeting_title||'Meeting')+'\\n✅ Created '+(($('Parse and Classify Tasks').first().json.high_tasks||[]).length)+' task(s) in Asana'+'\\n⏸️ Held '+($('Parse and Classify Tasks').first().json.medium_held||0)+' item(s) for 7 PM digest' }}",
           "otherOptions": {}
         },
         "credentials": {
