@@ -1,0 +1,87 @@
+{
+  "updatedAt": "2026-05-08T17:06:22.757Z",
+  "createdAt": "2026-05-08T17:06:22.757Z",
+  "id": "3I4BiZVPPMDparyh",
+  "name": "_iris_one_shot_dm_vishaal",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "slack_dm",
+      "name": "Send DM to Vishaal",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U057ERA9QFR",
+          "mode": "id"
+        },
+        "text": "Hey Vish — here's the full spec for the dev team on the Filtered EC:\n\n*QuoteWizard Auto 2 — Filtered Lead Signal EC*\n\nThe change is in VCAPy's QuoteWizard handler. Currently it fires one Google Ads conversion per hit. The ask is to fire two:\n\n1. *Existing conversion action* — fires on every QW hit, no change\n2. *\"QuoteWizard Auto Insurance Google Ads - Filtered\"* — fires only when `rev ≥ 5`\n\nThe `rev` value is already in the Delty postback (`{publisherrevenue}`) and flowing through VCAPy today. No new data required — this is purely a conditional on existing revenue data.\n\nBoth conversions should send the same Enhanced Conversion payload (hashed email, phone, name, zip) that's already in the postback.\n\nConversion action ID for the Filtered action: *7481145988*\n\nLet me know if the team needs anything else to move.\n\n_✦ Iris — Nelson's personal AI assistant_",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Bot OAuth Scoped"
+        }
+      },
+      "webhookId": "b1c602dc-701e-4a4d-a32e-74dc30af1508"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send DM to Vishaal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "1e0986d0-7181-4f71-83c0-8d3eb9611dd1",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-08T17:06:22.759Z",
+      "createdAt": "2026-05-08T17:06:22.759Z",
+      "role": "workflow:owner",
+      "workflowId": "3I4BiZVPPMDparyh",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
