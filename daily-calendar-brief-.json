@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-07T13:45:12.871Z",
+  "updatedAt": "2026-05-08T13:15:04.083Z",
   "createdAt": "2026-05-07T05:12:59.479Z",
   "id": "vgN0q3hjSJIQJHCd",
   "name": "Daily Calendar Brief",
@@ -13,8 +13,37 @@
       "typeVersion": 1,
       "position": [
         240,
-        400
+        300
       ]
+    },
+    {
+      "id": "a1b2c3d4-sched-trig-cal-brief",
+      "name": "Weekdays 6:55 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        500
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "triggerAtHour": 6,
+              "triggerAtMinute": 55
+            }
+          ]
+        }
+      }
     },
     {
       "id": "003aafa9-d982-4a2e-a461-797fc1dd5037",
@@ -60,7 +89,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "var events = $input.all().map(function(item) { return item.json; });\nvar now = new Date();\n\nvar realEvents = events.filter(function(e) {\n  if (!e.start || !e.start.dateTime) return false;\n  if (e.status === 'cancelled') return false;\n  var attendees = e.attendees || [];\n  var others = attendees.filter(function(a) {\n    return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n  });\n  if (attendees.length > 0 && others.length === 0) return false;\n  return true;\n});\n\nrealEvents.sort(function(a, b) {\n  return new Date(a.start.dateTime) - new Date(b.start.dateTime);\n});\n\nvar lines = [];\nlines.push('*Calendar Today (' + now.toISOString().split('T')[0] + ')*');\nlines.push('');\n\nif (realEvents.length === 0) {\n  lines.push('No meetings today. Deep work day.');\n} else {\n  realEvents.forEach(function(e) {\n    var start = new Date(e.start.dateTime);\n    var end = new Date(e.end.dateTime);\n    var startStr = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var endStr = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var duration = Math.round((end - start) / (1000 * 60));\n\n    var attendees = (e.attendees || []).filter(function(a) {\n      return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n    });\n    var attendeeStr = attendees.map(function(a) {\n      return a.displayName || a.email.split('@')[0];\n    }).join(', ');\n\n    var joinLink = e.hangoutLink || (e.conferenceData && e.conferenceData.entryPoints && e.conferenceData.entryPoints[0] ? e.conferenceData.entryPoints[0].uri : '');\n\n    var minutesUntil = Math.round((start - now) / (1000 * 60));\n    var timeTag = '';\n    if (minutesUntil > 0 && minutesUntil <= 30) timeTag = ' (starting soon)';\n    else if (minutesUntil <= 0 && minutesUntil > -duration) timeTag = ' (in progress)';\n\n    lines.push('\\u2022 *' + startStr + ' \\u2013 ' + endStr + '* (' + duration + 'min)' + timeTag);\n    lines.push('  ' + e.summary);\n    if (attendeeStr) lines.push('  With: ' + attendeeStr);\n    if (joinLink) lines.push('  Join: ' + joinLink);\n    lines.push('');\n  });\n\n  var totalMeetingMin = realEvents.reduce(function(sum, e) {\n    return sum + Math.round((new Date(e.end.dateTime) - new Date(e.start.dateTime)) / (1000 * 60));\n  }, 0);\n  lines.push('_' + realEvents.length + ' meetings, ' + Math.round(totalMeetingMin / 60 * 10) / 10 + 'h total_');\n}\n\nreturn [{ json: {\n  calendar_section: lines.join('\\n'),\n  event_count: realEvents.length,\n  events: realEvents.map(function(e) {\n    return {\n      id: e.id,\n      summary: e.summary,\n      start: e.start.dateTime,\n      end: e.end.dateTime,\n      attendees: (e.attendees || []).map(function(a) { return a.email; })\n    };\n  })\n}}];"
+        "jsCode": "var events = $input.all().map(function(item) { return item.json; });\nvar now = new Date();\n\nvar realEvents = events.filter(function(e) {\n  if (!e.start || !e.start.dateTime) return false;\n  if (e.status === 'cancelled') return false;\n  var attendees = e.attendees || [];\n  var others = attendees.filter(function(a) {\n    return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n  });\n  if (attendees.length > 0 && others.length === 0) return false;\n  return true;\n});\n\nrealEvents.sort(function(a, b) {\n  return new Date(a.start.dateTime) - new Date(b.start.dateTime);\n});\n\nvar lines = [];\nlines.push('*Calendar Today (' + now.toISOString().split('T')[0] + ')*');\nlines.push('');\n\nif (realEvents.length === 0) {\n  lines.push('No meetings today. Deep work day.');\n} else {\n  realEvents.forEach(function(e) {\n    var start = new Date(e.start.dateTime);\n    var end = new Date(e.end.dateTime);\n    var startStr = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var endStr = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var duration = Math.round((end - start) / (1000 * 60));\n\n    var attendees = (e.attendees || []).filter(function(a) {\n      return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n    });\n    var attendeeStr = attendees.map(function(a) {\n      return a.displayName || a.email.split('@')[0];\n    }).join(', ');\n\n    var joinLink = e.hangoutLink || (e.conferenceData && e.conferenceData.entryPoints && e.conferenceData.entryPoints[0] ? e.conferenceData.entryPoints[0].uri : '');\n\n    var minutesUntil = Math.round((start - now) / (1000 * 60));\n    var timeTag = '';\n    if (minutesUntil > 0 && minutesUntil <= 30) timeTag = ' (starting soon)';\n    else if (minutesUntil <= 0 && minutesUntil > -duration) timeTag = ' (in progress)';\n\n    lines.push('• *' + startStr + ' – ' + endStr + '* (' + duration + 'min)' + timeTag);\n    lines.push('  ' + e.summary);\n    if (attendeeStr) lines.push('  With: ' + attendeeStr);\n    if (joinLink) lines.push('  Join: ' + joinLink);\n    lines.push('');\n  });\n\n  var totalMeetingMin = realEvents.reduce(function(sum, e) {\n    return sum + Math.round((new Date(e.end.dateTime) - new Date(e.start.dateTime)) / (1000 * 60));\n  }, 0);\n  lines.push('_' + realEvents.length + ' meetings, ' + Math.round(totalMeetingMin / 60 * 10) / 10 + 'h total_');\n}\n\nreturn [{ json: {\n  calendar_section: lines.join('\\n'),\n  event_count: realEvents.length,\n  events: realEvents.map(function(e) {\n    return {\n      id: e.id,\n      summary: e.summary,\n      start: e.start.dateTime,\n      end: e.end.dateTime,\n      attendees: (e.attendees || []).map(function(a) { return a.email; })\n    };\n  })\n}}];"
       }
     },
     {
@@ -106,6 +135,17 @@
         ]
       ]
     },
+    "Weekdays 6:55 AM": {
+      "main": [
+        [
+          {
+            "node": "Fetch Today Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Fetch Today Events": {
       "main": [
         [
@@ -135,14 +175,18 @@
     "timezone": "America/New_York",
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "staticData": null,
+  "staticData": {
+    "node:Weekdays 6:55 AM": {
+      "recurrenceRules": []
+    }
+  },
   "meta": {
     "aiBuilderAssisted": true
   },
   "pinData": null,
-  "versionId": "64c0762f-6e8f-4a01-9f42-cd754cfcfd82",
-  "activeVersionId": "64c0762f-6e8f-4a01-9f42-cd754cfcfd82",
-  "triggerCount": 0,
+  "versionId": "f7774c88-898a-40c2-811e-7aa346249ddb",
+  "activeVersionId": "f7774c88-898a-40c2-811e-7aa346249ddb",
+  "triggerCount": 1,
   "shared": [
     {
       "updatedAt": "2026-05-07T05:12:59.481Z",
@@ -153,9 +197,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-07T05:12:59.481Z",
-    "createdAt": "2026-05-07T05:12:59.481Z",
-    "versionId": "64c0762f-6e8f-4a01-9f42-cd754cfcfd82",
+    "updatedAt": "2026-05-08T13:15:04.084Z",
+    "createdAt": "2026-05-08T13:15:04.084Z",
+    "versionId": "f7774c88-898a-40c2-811e-7aa346249ddb",
     "workflowId": "vgN0q3hjSJIQJHCd",
     "nodes": [
       {
@@ -165,8 +209,37 @@
         "typeVersion": 1,
         "position": [
           240,
-          400
+          300
         ]
+      },
+      {
+        "id": "a1b2c3d4-sched-trig-cal-brief",
+        "name": "Weekdays 6:55 AM",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          240,
+          500
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "weeks",
+                "weeksInterval": 1,
+                "triggerAtDay": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "triggerAtHour": 6,
+                "triggerAtMinute": 55
+              }
+            ]
+          }
+        }
       },
       {
         "id": "003aafa9-d982-4a2e-a461-797fc1dd5037",
@@ -212,7 +285,7 @@
         "parameters": {
           "mode": "runOnceForAllItems",
           "language": "javaScript",
-          "jsCode": "var events = $input.all().map(function(item) { return item.json; });\nvar now = new Date();\n\nvar realEvents = events.filter(function(e) {\n  if (!e.start || !e.start.dateTime) return false;\n  if (e.status === 'cancelled') return false;\n  var attendees = e.attendees || [];\n  var others = attendees.filter(function(a) {\n    return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n  });\n  if (attendees.length > 0 && others.length === 0) return false;\n  return true;\n});\n\nrealEvents.sort(function(a, b) {\n  return new Date(a.start.dateTime) - new Date(b.start.dateTime);\n});\n\nvar lines = [];\nlines.push('*Calendar Today (' + now.toISOString().split('T')[0] + ')*');\nlines.push('');\n\nif (realEvents.length === 0) {\n  lines.push('No meetings today. Deep work day.');\n} else {\n  realEvents.forEach(function(e) {\n    var start = new Date(e.start.dateTime);\n    var end = new Date(e.end.dateTime);\n    var startStr = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var endStr = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var duration = Math.round((end - start) / (1000 * 60));\n\n    var attendees = (e.attendees || []).filter(function(a) {\n      return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n    });\n    var attendeeStr = attendees.map(function(a) {\n      return a.displayName || a.email.split('@')[0];\n    }).join(', ');\n\n    var joinLink = e.hangoutLink || (e.conferenceData && e.conferenceData.entryPoints && e.conferenceData.entryPoints[0] ? e.conferenceData.entryPoints[0].uri : '');\n\n    var minutesUntil = Math.round((start - now) / (1000 * 60));\n    var timeTag = '';\n    if (minutesUntil > 0 && minutesUntil <= 30) timeTag = ' (starting soon)';\n    else if (minutesUntil <= 0 && minutesUntil > -duration) timeTag = ' (in progress)';\n\n    lines.push('\\u2022 *' + startStr + ' \\u2013 ' + endStr + '* (' + duration + 'min)' + timeTag);\n    lines.push('  ' + e.summary);\n    if (attendeeStr) lines.push('  With: ' + attendeeStr);\n    if (joinLink) lines.push('  Join: ' + joinLink);\n    lines.push('');\n  });\n\n  var totalMeetingMin = realEvents.reduce(function(sum, e) {\n    return sum + Math.round((new Date(e.end.dateTime) - new Date(e.start.dateTime)) / (1000 * 60));\n  }, 0);\n  lines.push('_' + realEvents.length + ' meetings, ' + Math.round(totalMeetingMin / 60 * 10) / 10 + 'h total_');\n}\n\nreturn [{ json: {\n  calendar_section: lines.join('\\n'),\n  event_count: realEvents.length,\n  events: realEvents.map(function(e) {\n    return {\n      id: e.id,\n      summary: e.summary,\n      start: e.start.dateTime,\n      end: e.end.dateTime,\n      attendees: (e.attendees || []).map(function(a) { return a.email; })\n    };\n  })\n}}];"
+          "jsCode": "var events = $input.all().map(function(item) { return item.json; });\nvar now = new Date();\n\nvar realEvents = events.filter(function(e) {\n  if (!e.start || !e.start.dateTime) return false;\n  if (e.status === 'cancelled') return false;\n  var attendees = e.attendees || [];\n  var others = attendees.filter(function(a) {\n    return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n  });\n  if (attendees.length > 0 && others.length === 0) return false;\n  return true;\n});\n\nrealEvents.sort(function(a, b) {\n  return new Date(a.start.dateTime) - new Date(b.start.dateTime);\n});\n\nvar lines = [];\nlines.push('*Calendar Today (' + now.toISOString().split('T')[0] + ')*');\nlines.push('');\n\nif (realEvents.length === 0) {\n  lines.push('No meetings today. Deep work day.');\n} else {\n  realEvents.forEach(function(e) {\n    var start = new Date(e.start.dateTime);\n    var end = new Date(e.end.dateTime);\n    var startStr = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var endStr = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });\n    var duration = Math.round((end - start) / (1000 * 60));\n\n    var attendees = (e.attendees || []).filter(function(a) {\n      return a.email !== 'nelson.torres@adquadrant.com' && !a.self;\n    });\n    var attendeeStr = attendees.map(function(a) {\n      return a.displayName || a.email.split('@')[0];\n    }).join(', ');\n\n    var joinLink = e.hangoutLink || (e.conferenceData && e.conferenceData.entryPoints && e.conferenceData.entryPoints[0] ? e.conferenceData.entryPoints[0].uri : '');\n\n    var minutesUntil = Math.round((start - now) / (1000 * 60));\n    var timeTag = '';\n    if (minutesUntil > 0 && minutesUntil <= 30) timeTag = ' (starting soon)';\n    else if (minutesUntil <= 0 && minutesUntil > -duration) timeTag = ' (in progress)';\n\n    lines.push('• *' + startStr + ' – ' + endStr + '* (' + duration + 'min)' + timeTag);\n    lines.push('  ' + e.summary);\n    if (attendeeStr) lines.push('  With: ' + attendeeStr);\n    if (joinLink) lines.push('  Join: ' + joinLink);\n    lines.push('');\n  });\n\n  var totalMeetingMin = realEvents.reduce(function(sum, e) {\n    return sum + Math.round((new Date(e.end.dateTime) - new Date(e.start.dateTime)) / (1000 * 60));\n  }, 0);\n  lines.push('_' + realEvents.length + ' meetings, ' + Math.round(totalMeetingMin / 60 * 10) / 10 + 'h total_');\n}\n\nreturn [{ json: {\n  calendar_section: lines.join('\\n'),\n  event_count: realEvents.length,\n  events: realEvents.map(function(e) {\n    return {\n      id: e.id,\n      summary: e.summary,\n      start: e.start.dateTime,\n      end: e.end.dateTime,\n      attendees: (e.attendees || []).map(function(a) { return a.email; })\n    };\n  })\n}}];"
         }
       },
       {
@@ -248,6 +321,17 @@
     ],
     "connections": {
       "Trigger": {
+        "main": [
+          [
+            {
+              "node": "Fetch Today Events",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Weekdays 6:55 AM": {
         "main": [
           [
             {
