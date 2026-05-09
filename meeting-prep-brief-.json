@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-07T19:56:43.306Z",
+  "updatedAt": "2026-05-08T14:33:46.709Z",
   "createdAt": "2026-05-07T05:15:21.196Z",
   "id": "sCiBWFHwOLL4Lt37",
   "name": "Meeting Prep Brief",
@@ -124,8 +124,8 @@
       "webhookId": "233693db-bb9b-4654-87e9-f9132111d933",
       "credentials": {
         "slackApi": {
-          "id": "ie6DnUT6N6lLxV3B",
-          "name": "Slack account"
+          "id": "2Yp3XicvnjJ67cIP",
+          "name": "User OAuth Scoped"
         }
       }
     },
@@ -221,7 +221,7 @@
       "credentials": {
         "slackApi": {
           "id": "ie6DnUT6N6lLxV3B",
-          "name": "Slack account"
+          "name": "Bot OAuth Scoped"
         }
       }
     },
@@ -346,12 +346,8 @@
     },
     "global": {
       "prepped": {
-        "prep_0rr37erbs4n7d42sskf81knn2l": "2026-05-07T15:00:34.268Z",
-        "prep_2l99orig80he2l5ssguemsohut_20260507T163000Z": "2026-05-07T16:00:34.230Z",
-        "prep_321qn9svva7cfap4ulhpqb82b6_20260507T170000Z": "2026-05-07T16:30:34.221Z",
-        "prep_inlogkfq5m8tc77li6st4j6m78_20260507T180000Z": "2026-05-07T17:30:34.288Z",
-        "prep_harmhlndelsaqkfa8qp48iab1s": "2026-05-07T19:00:34.280Z",
-        "prep__6dim8e1m69imabb16osjib9k6ks36b9pccpj2bb4cgo32e9k64o34dpl74": "2026-05-07T20:00:45.241Z"
+        "prep_2l99orig80he2l5ssguemsohut_20260508T163000Z": "2026-05-08T16:00:13.306Z",
+        "prep_321qn9svva7cfap4ulhpqb82b6_20260508T170000Z": "2026-05-08T16:30:13.244Z"
       }
     }
   },
@@ -359,8 +355,8 @@
     "aiBuilderAssisted": true
   },
   "pinData": null,
-  "versionId": "779258c6-bbae-48ea-be65-54e8ae1cde5e",
-  "activeVersionId": "779258c6-bbae-48ea-be65-54e8ae1cde5e",
+  "versionId": "4b6dc345-df7c-4043-a2de-05d5a501668d",
+  "activeVersionId": "4b6dc345-df7c-4043-a2de-05d5a501668d",
   "triggerCount": 1,
   "shared": [
     {
@@ -372,9 +368,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-07T19:56:43.307Z",
-    "createdAt": "2026-05-07T19:56:43.307Z",
-    "versionId": "779258c6-bbae-48ea-be65-54e8ae1cde5e",
+    "updatedAt": "2026-05-08T14:33:46.709Z",
+    "createdAt": "2026-05-08T14:33:46.709Z",
+    "versionId": "4b6dc345-df7c-4043-a2de-05d5a501668d",
     "workflowId": "sCiBWFHwOLL4Lt37",
     "nodes": [
       {
@@ -495,8 +491,8 @@
         "webhookId": "233693db-bb9b-4654-87e9-f9132111d933",
         "credentials": {
           "slackApi": {
-            "id": "ie6DnUT6N6lLxV3B",
-            "name": "Slack account"
+            "id": "2Yp3XicvnjJ67cIP",
+            "name": "User OAuth Scoped"
           }
         }
       },
@@ -592,7 +588,7 @@
         "credentials": {
           "slackApi": {
             "id": "ie6DnUT6N6lLxV3B",
-            "name": "Slack account"
+            "name": "Bot OAuth Scoped"
           }
         }
       },
