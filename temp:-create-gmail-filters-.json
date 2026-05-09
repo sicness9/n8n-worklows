@@ -1,0 +1,111 @@
+{
+  "updatedAt": "2026-05-08T16:43:50.686Z",
+  "createdAt": "2026-05-08T13:25:33.471Z",
+  "id": "lj7TMRTWnGvWAw1x",
+  "name": "Temp: Create Gmail Filters",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "temp-create-filters",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "w1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "temp-create-filters"
+    },
+    {
+      "parameters": {
+        "jsCode": "const OPS_LABEL = 'Label_2356661191061945189';\n\nconst filters = [\n  {\n    criteria: { from: 'no-reply@asana.com', subject: 'unread notifications' },\n    action: { removeLabelIds: ['INBOX'] }\n  },\n  {\n    criteria: { from: 'no-reply@asana.com', query: 'subject:(digest OR summary) -subject:assigned -subject:task' },\n    action: { removeLabelIds: ['INBOX'] }\n  },\n  {\n    criteria: { from: 'goat-scheduler@everquote.com' },\n    action: { removeLabelIds: ['INBOX'], addLabelIds: [OPS_LABEL] }\n  },\n  {\n    criteria: { from: 'delty-reporting@qw-corp.com' },\n    action: { removeLabelIds: ['INBOX'], addLabelIds: [OPS_LABEL] }\n  }\n];\n\nreturn filters.map(f => ({ json: f }));"
+      },
+      "id": "c1",
+      "name": "Filter Configs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        470,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/settings/filters",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "h1",
+      "name": "Create Filter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        690,
+        300
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "BioUrrORr4sw8djI",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filter Configs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Configs": {
+      "main": [
+        [
+          {
+            "node": "Create Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "f6457e12-39f2-4aab-a957-435d4c4c9aec",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-08T13:25:33.473Z",
+      "createdAt": "2026-05-08T13:25:33.473Z",
+      "role": "workflow:owner",
+      "workflowId": "lj7TMRTWnGvWAw1x",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
