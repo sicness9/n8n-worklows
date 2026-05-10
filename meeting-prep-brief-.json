@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-08T14:33:46.709Z",
+  "updatedAt": "2026-05-09T16:42:57.350Z",
   "createdAt": "2026-05-07T05:15:21.196Z",
   "id": "sCiBWFHwOLL4Lt37",
   "name": "Meeting Prep Brief",
@@ -235,6 +235,98 @@
         500
       ],
       "parameters": {}
+    },
+    {
+      "id": "d16dcd6e-c84d-44b3-a63d-42f97e17eeb8",
+      "name": "Check Business Hours",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const now = new Date();\nconst ptStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });\nconst ptTime = new Date(ptStr);\nconst hour = ptTime.getHours();\nconst day = ptTime.getDay();\nconst isWeekday = day >= 1 && day <= 5;\nconst isBusinessHours = isWeekday && hour >= 8 && hour < 22;\nreturn [{ json: { is_business_hours: isBusinessHours, pt_hour: hour, pt_day: day } }];"
+      }
+    },
+    {
+      "id": "e58b03ae-9a7f-4886-ad40-2eb5be37dcd8",
+      "name": "Is Business Hours?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        380,
+        550
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.is_business_hours }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "31def174-adf7-4150-87ad-4c096344c89c",
+      "name": "Check Business Hours",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const now = new Date();\nconst ptStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });\nconst ptTime = new Date(ptStr);\nconst hour = ptTime.getHours();\nconst day = ptTime.getDay();\nconst isWeekday = day >= 1 && day <= 5;\nconst isBusinessHours = isWeekday && hour >= 8 && hour < 22;\nreturn [{ json: { is_business_hours: isBusinessHours, pt_hour: hour, pt_day: day } }];"
+      }
+    },
+    {
+      "id": "9875e190-5348-462e-ab4c-c5f23e109115",
+      "name": "Is Business Hours?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        380,
+        550
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.is_business_hours }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "connections": {
@@ -242,7 +334,7 @@
       "main": [
         [
           {
-            "node": "Fetch Upcoming Meetings",
+            "node": "Check Business Hours",
             "type": "main",
             "index": 0
           }
@@ -332,11 +424,33 @@
           }
         ]
       ]
+    },
+    "Check Business Hours": {
+      "main": [
+        [
+          {
+            "node": "Is Business Hours?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Business Hours?": {
+      "main": [
+        [
+          {
+            "node": "Check Business Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": true,
+    "availableInMCP": false,
     "timezone": "America/New_York",
     "callerPolicy": "workflowsFromSameOwner"
   },
@@ -355,8 +469,8 @@
     "aiBuilderAssisted": true
   },
   "pinData": null,
-  "versionId": "4b6dc345-df7c-4043-a2de-05d5a501668d",
-  "activeVersionId": "4b6dc345-df7c-4043-a2de-05d5a501668d",
+  "versionId": "df9d9fb5-26d2-47e2-a408-2e6c7ceab8fe",
+  "activeVersionId": "df9d9fb5-26d2-47e2-a408-2e6c7ceab8fe",
   "triggerCount": 1,
   "shared": [
     {
@@ -368,9 +482,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-08T14:33:46.709Z",
-    "createdAt": "2026-05-08T14:33:46.709Z",
-    "versionId": "4b6dc345-df7c-4043-a2de-05d5a501668d",
+    "updatedAt": "2026-05-09T16:42:57.351Z",
+    "createdAt": "2026-05-09T16:42:57.351Z",
+    "versionId": "df9d9fb5-26d2-47e2-a408-2e6c7ceab8fe",
     "workflowId": "sCiBWFHwOLL4Lt37",
     "nodes": [
       {
@@ -602,6 +716,98 @@
           500
         ],
         "parameters": {}
+      },
+      {
+        "id": "d16dcd6e-c84d-44b3-a63d-42f97e17eeb8",
+        "name": "Check Business Hours",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          380,
+          400
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const now = new Date();\nconst ptStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });\nconst ptTime = new Date(ptStr);\nconst hour = ptTime.getHours();\nconst day = ptTime.getDay();\nconst isWeekday = day >= 1 && day <= 5;\nconst isBusinessHours = isWeekday && hour >= 8 && hour < 22;\nreturn [{ json: { is_business_hours: isBusinessHours, pt_hour: hour, pt_day: day } }];"
+        }
+      },
+      {
+        "id": "e58b03ae-9a7f-4886-ad40-2eb5be37dcd8",
+        "name": "Is Business Hours?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          380,
+          550
+        ],
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.is_business_hours }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "31def174-adf7-4150-87ad-4c096344c89c",
+        "name": "Check Business Hours",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          380,
+          400
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const now = new Date();\nconst ptStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });\nconst ptTime = new Date(ptStr);\nconst hour = ptTime.getHours();\nconst day = ptTime.getDay();\nconst isWeekday = day >= 1 && day <= 5;\nconst isBusinessHours = isWeekday && hour >= 8 && hour < 22;\nreturn [{ json: { is_business_hours: isBusinessHours, pt_hour: hour, pt_day: day } }];"
+        }
+      },
+      {
+        "id": "9875e190-5348-462e-ab4c-c5f23e109115",
+        "name": "Is Business Hours?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          380,
+          550
+        ],
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.is_business_hours }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true"
+                }
+              }
+            ]
+          }
+        }
       }
     ],
     "connections": {
@@ -609,7 +815,7 @@
         "main": [
           [
             {
-              "node": "Fetch Upcoming Meetings",
+              "node": "Check Business Hours",
               "type": "main",
               "index": 0
             }
@@ -694,6 +900,28 @@
           [
             {
               "node": "Send Prep Brief DM",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Business Hours": {
+        "main": [
+          [
+            {
+              "node": "Is Business Hours?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Business Hours?": {
+        "main": [
+          [
+            {
+              "node": "Check Business Hours",
               "type": "main",
               "index": 0
             }
