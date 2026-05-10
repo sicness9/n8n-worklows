@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-08T13:15:01.446Z",
+  "updatedAt": "2026-05-09T16:42:56.641Z",
   "createdAt": "2026-05-05T22:06:52.817Z",
   "id": "V9nBJmspHOAo5MU5",
   "name": "Morning Brief Push",
@@ -110,7 +110,10 @@
           "id": "qjdLurgn1OANVO3L",
           "name": "Header Auth account"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
     },
     {
       "id": "1ebabddc-269e-43ab-bd46-efeec15fc9fa",
@@ -153,9 +156,12 @@
       "credentials": {
         "slackApi": {
           "id": "ie6DnUT6N6lLxV3B",
-          "name": "Slack account"
+          "name": "Bot OAuth Scoped"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
     }
   ],
   "connections": {
@@ -218,7 +224,7 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": true,
+    "availableInMCP": false,
     "timezone": "America/New_York"
   },
   "staticData": {
@@ -230,8 +236,8 @@
     "aiBuilderAssisted": true
   },
   "pinData": null,
-  "versionId": "ac764a6f-8a69-4255-aacd-5f60d1e83892",
-  "activeVersionId": "ac764a6f-8a69-4255-aacd-5f60d1e83892",
+  "versionId": "4ec4ecb9-1a5a-4bb0-b2f4-e83decadc549",
+  "activeVersionId": "4ec4ecb9-1a5a-4bb0-b2f4-e83decadc549",
   "triggerCount": 1,
   "shared": [
     {
@@ -243,9 +249,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-08T13:15:01.446Z",
-    "createdAt": "2026-05-08T13:15:01.446Z",
-    "versionId": "ac764a6f-8a69-4255-aacd-5f60d1e83892",
+    "updatedAt": "2026-05-09T16:42:26.560Z",
+    "createdAt": "2026-05-09T16:42:26.560Z",
+    "versionId": "4ec4ecb9-1a5a-4bb0-b2f4-e83decadc549",
     "workflowId": "V9nBJmspHOAo5MU5",
     "nodes": [
       {
@@ -352,7 +358,10 @@
             "id": "qjdLurgn1OANVO3L",
             "name": "Header Auth account"
           }
-        }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000
       },
       {
         "id": "1ebabddc-269e-43ab-bd46-efeec15fc9fa",
@@ -395,9 +404,12 @@
         "credentials": {
           "slackApi": {
             "id": "ie6DnUT6N6lLxV3B",
-            "name": "Slack account"
+            "name": "Bot OAuth Scoped"
           }
-        }
+        },
+        "retryOnFail": true,
+        "maxTries": 2,
+        "waitBetweenTries": 3000
       }
     ],
     "connections": {
