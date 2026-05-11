@@ -482,7 +482,7 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-09T16:42:57.351Z",
+    "updatedAt": "2026-05-10T14:52:02.000Z",
     "createdAt": "2026-05-09T16:42:57.351Z",
     "versionId": "df9d9fb5-26d2-47e2-a408-2e6c7ceab8fe",
     "workflowId": "sCiBWFHwOLL4Lt37",
@@ -930,8 +930,8 @@
       }
     },
     "authors": "Nelson Torres",
-    "name": null,
-    "description": null,
+    "name": "Version df9d9fb5",
+    "description": "",
     "autosaved": false
   },
   "tags": []
