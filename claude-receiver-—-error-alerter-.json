@@ -1,0 +1,165 @@
+{
+  "updatedAt": "2026-05-11T12:09:39.314Z",
+  "createdAt": "2026-05-11T12:08:24.776Z",
+  "id": "5MP2VekP9oa96lDC",
+  "name": "Claude Receiver — Error Alerter",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "name": "Error Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "claude-error-alert",
+        "responseMode": "onReceived"
+      },
+      "webhookId": "err-alert-001",
+      "id": "09a87a1a-0e1b-4ffd-80e3-66c94712f423"
+    },
+    {
+      "name": "DM Nelson",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        540,
+        300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Bot OAuth Scoped"
+        }
+      },
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "U0AS1DLUKQV"
+        },
+        "messageType": "text",
+        "text": "=\"⚠️ `/\" + $json.body.command + \"` failed (\" + ($json.body.error === \"timeout\" ? \"timeout\" : \"exit \" + $json.body.exit_code) + \") — `\" + $json.body.log_path + \"`\\n_task_id: \" + ($json.body.task_id || \"none\") + \" | \" + $json.body.timestamp + \"_\"",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "e60cd195-a939-4f9d-b97c-f42f1a491035",
+      "webhookId": "01270c2b-747f-4e71-a711-b87f8cf988df"
+    }
+  ],
+  "connections": {
+    "Error Webhook": {
+      "main": [
+        [
+          {
+            "node": "DM Nelson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "716e82b3-5971-41f6-b869-6e3858ce33ad",
+  "activeVersionId": "716e82b3-5971-41f6-b869-6e3858ce33ad",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-05-11T12:08:24.778Z",
+      "createdAt": "2026-05-11T12:08:24.778Z",
+      "role": "workflow:owner",
+      "workflowId": "5MP2VekP9oa96lDC",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-05-11T12:09:39.314Z",
+    "createdAt": "2026-05-11T12:09:39.314Z",
+    "versionId": "716e82b3-5971-41f6-b869-6e3858ce33ad",
+    "workflowId": "5MP2VekP9oa96lDC",
+    "nodes": [
+      {
+        "name": "Error Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          240,
+          300
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "claude-error-alert",
+          "responseMode": "onReceived"
+        },
+        "webhookId": "err-alert-001",
+        "id": "09a87a1a-0e1b-4ffd-80e3-66c94712f423"
+      },
+      {
+        "name": "DM Nelson",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          540,
+          300
+        ],
+        "credentials": {
+          "slackApi": {
+            "id": "ie6DnUT6N6lLxV3B",
+            "name": "Bot OAuth Scoped"
+          }
+        },
+        "parameters": {
+          "resource": "message",
+          "operation": "post",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "U0AS1DLUKQV"
+          },
+          "messageType": "text",
+          "text": "=\"⚠️ `/\" + $json.body.command + \"` failed (\" + ($json.body.error === \"timeout\" ? \"timeout\" : \"exit \" + $json.body.exit_code) + \") — `\" + $json.body.log_path + \"`\\n_task_id: \" + ($json.body.task_id || \"none\") + \" | \" + $json.body.timestamp + \"_\"",
+          "otherOptions": {
+            "includeLinkToWorkflow": false
+          }
+        },
+        "id": "e60cd195-a939-4f9d-b97c-f42f1a491035",
+        "webhookId": "01270c2b-747f-4e71-a711-b87f8cf988df"
+      }
+    ],
+    "connections": {
+      "Error Webhook": {
+        "main": [
+          [
+            {
+              "node": "DM Nelson",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}
