@@ -1,0 +1,481 @@
+{
+  "updatedAt": "2026-05-11T12:09:45.116Z",
+  "createdAt": "2026-05-11T12:08:42.136Z",
+  "id": "kBxN2QvrOmOAja3w",
+  "name": "Claude Receiver — Health Watchdog",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "name": "Every 15 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "e17d9029-71e8-4f90-aef2-a4c494c25247"
+    },
+    {
+      "name": "Business Hours?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $now.setZone(\"America/Los_Angeles\").hour }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "leftValue": "={{ $now.setZone(\"America/Los_Angeles\").hour }}",
+              "rightValue": 23,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "leftValue": "={{ $now.setZone(\"America/Los_Angeles\").weekday }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ]
+        }
+      },
+      "id": "34af9d2c-291e-4dbe-8c18-feacb7b43ea3"
+    },
+    {
+      "name": "GET /health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        680,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8765/health",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "1e5e0a37-d043-4692-b91f-6a8607b230a8"
+    },
+    {
+      "name": "Status OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        900,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "248e7cca-ec46-41e2-af90-92159e479585"
+    },
+    {
+      "name": "All Good",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        100
+      ],
+      "parameters": {},
+      "id": "9d6cf481-60d5-4386-85d0-aff1d402e1e9"
+    },
+    {
+      "name": "Alert Nelson",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Bot OAuth Scoped"
+        }
+      },
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "U0AS1DLUKQV"
+        },
+        "messageType": "text",
+        "text": "🔴 Claude receiver is down — check launchd service\n`launchctl kickstart -k gui/$(id -u)/com.adquadrant.claude-receiver`",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "7e76e070-28b6-4371-8a70-a28c1ebc1dc5",
+      "webhookId": "80060f63-9105-4b20-8fa6-e76ca5080b56"
+    }
+  ],
+  "connections": {
+    "Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Business Hours?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Hours?": {
+      "main": [
+        [
+          {
+            "node": "GET /health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /health": {
+      "main": [
+        [
+          {
+            "node": "Status OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status OK?": {
+      "main": [
+        [
+          {
+            "node": "All Good",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Nelson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "node:Every 15 Minutes": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": null,
+  "versionId": "dac3b81b-5e77-486b-a591-ca9c8794efee",
+  "activeVersionId": "dac3b81b-5e77-486b-a591-ca9c8794efee",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-05-11T12:08:42.137Z",
+      "createdAt": "2026-05-11T12:08:42.137Z",
+      "role": "workflow:owner",
+      "workflowId": "kBxN2QvrOmOAja3w",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-05-11T12:09:45.117Z",
+    "createdAt": "2026-05-11T12:09:45.117Z",
+    "versionId": "dac3b81b-5e77-486b-a591-ca9c8794efee",
+    "workflowId": "kBxN2QvrOmOAja3w",
+    "nodes": [
+      {
+        "name": "Every 15 Minutes",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          240,
+          300
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes",
+                "minutesInterval": 15
+              }
+            ]
+          }
+        },
+        "id": "e17d9029-71e8-4f90-aef2-a4c494c25247"
+      },
+      {
+        "name": "Business Hours?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          460,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $now.setZone(\"America/Los_Angeles\").hour }}",
+                "rightValue": 7,
+                "operator": {
+                  "type": "number",
+                  "operation": "gte"
+                }
+              },
+              {
+                "leftValue": "={{ $now.setZone(\"America/Los_Angeles\").hour }}",
+                "rightValue": 23,
+                "operator": {
+                  "type": "number",
+                  "operation": "lt"
+                }
+              },
+              {
+                "leftValue": "={{ $now.setZone(\"America/Los_Angeles\").weekday }}",
+                "rightValue": 5,
+                "operator": {
+                  "type": "number",
+                  "operation": "lte"
+                }
+              }
+            ]
+          }
+        },
+        "id": "34af9d2c-291e-4dbe-8c18-feacb7b43ea3"
+      },
+      {
+        "name": "GET /health",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          680,
+          200
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "http://127.0.0.1:8765/health",
+          "options": {
+            "timeout": 5000,
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            }
+          }
+        },
+        "id": "1e5e0a37-d043-4692-b91f-6a8607b230a8"
+      },
+      {
+        "name": "Status OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          900,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.statusCode }}",
+                "rightValue": 200,
+                "operator": {
+                  "type": "number",
+                  "operation": "equals"
+                }
+              }
+            ]
+          }
+        },
+        "id": "248e7cca-ec46-41e2-af90-92159e479585"
+      },
+      {
+        "name": "All Good",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          1120,
+          100
+        ],
+        "parameters": {},
+        "id": "9d6cf481-60d5-4386-85d0-aff1d402e1e9"
+      },
+      {
+        "name": "Alert Nelson",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          1120,
+          300
+        ],
+        "credentials": {
+          "slackApi": {
+            "id": "ie6DnUT6N6lLxV3B",
+            "name": "Bot OAuth Scoped"
+          }
+        },
+        "parameters": {
+          "resource": "message",
+          "operation": "post",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "U0AS1DLUKQV"
+          },
+          "messageType": "text",
+          "text": "🔴 Claude receiver is down — check launchd service\n`launchctl kickstart -k gui/$(id -u)/com.adquadrant.claude-receiver`",
+          "otherOptions": {
+            "includeLinkToWorkflow": false
+          }
+        },
+        "id": "7e76e070-28b6-4371-8a70-a28c1ebc1dc5",
+        "webhookId": "80060f63-9105-4b20-8fa6-e76ca5080b56"
+      }
+    ],
+    "connections": {
+      "Every 15 Minutes": {
+        "main": [
+          [
+            {
+              "node": "Business Hours?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Business Hours?": {
+        "main": [
+          [
+            {
+              "node": "GET /health",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GET /health": {
+        "main": [
+          [
+            {
+              "node": "Status OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Status OK?": {
+        "main": [
+          [
+            {
+              "node": "All Good",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Alert Nelson",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}
