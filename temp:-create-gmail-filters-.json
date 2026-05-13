@@ -1,10 +1,10 @@
 {
-  "updatedAt": "2026-05-08T16:43:50.686Z",
+  "updatedAt": "2026-05-12T22:46:05.000Z",
   "createdAt": "2026-05-08T13:25:33.471Z",
   "id": "lj7TMRTWnGvWAw1x",
   "name": "Temp: Create Gmail Filters",
   "active": false,
-  "isArchived": false,
+  "isArchived": true,
   "nodes": [
     {
       "parameters": {
@@ -94,7 +94,7 @@
   "staticData": null,
   "meta": null,
   "pinData": null,
-  "versionId": "f6457e12-39f2-4aab-a957-435d4c4c9aec",
+  "versionId": "3bad9018-81b9-41dc-bbe9-2234317630ba",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
