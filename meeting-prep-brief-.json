@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-09T16:42:57.350Z",
+  "updatedAt": "2026-05-12T19:04:29.533Z",
   "createdAt": "2026-05-07T05:15:21.196Z",
   "id": "sCiBWFHwOLL4Lt37",
   "name": "Meeting Prep Brief",
@@ -79,7 +79,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1100,
+        1800,
         400
       ],
       "parameters": {
@@ -109,8 +109,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
       "position": [
-        1380,
-        300
+        2060,
+        200
       ],
       "parameters": {
         "resource": "message",
@@ -135,13 +135,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1660,
-        300
+        2340,
+        200
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "var meetingData = $('Prepare Meeting Data').first().json;\nvar slackResults = $input.all().map(function(item) { return item.json; });\n\nvar slackContext = slackResults.filter(function(r) { return r.text; }).slice(0, 8).map(function(r) {\n  return '- [' + (r.username || 'unknown') + ' in #' + (r.channel && r.channel.name || 'dm') + ']: ' + (r.text || '').substring(0, 200);\n}).join('\\n');\n\nvar meetingLines = meetingData.meetings.map(function(m) {\n  var attendeeStr = m.attendees.map(function(a) { return a.name + ' (' + a.email + ')'; }).join(', ');\n  return '- ' + m.title + ' at ' + m.start + ' (' + m.duration + 'min)\\n  Attendees: ' + attendeeStr + (m.description ? '\\n  Description: ' + m.description.substring(0, 300) : '');\n}).join('\\n');\n\nvar prompt = 'Generate a concise meeting prep brief. Keep it under 20 lines.\\n\\n';\nprompt += '## Upcoming Meetings\\n' + meetingLines + '\\n\\n';\nif (slackContext) prompt += '## Recent Slack Context\\n' + slackContext + '\\n\\n';\nprompt += '## Output Format\\nFor each meeting:\\n';\nprompt += '1. One-line summary of what this meeting is about\\n';\nprompt += '2. Key attendees and their likely roles/interests\\n';\nprompt += '3. Recent context from Slack (if relevant)\\n';\nprompt += '4. Suggested talking points or things to prepare\\n';\nprompt += '5. Join link (if available)\\n';\n\nvar joinLinks = meetingData.meetings.filter(function(m) { return m.joinLink; }).map(function(m) { return m.title + ': ' + m.joinLink; });\nif (joinLinks.length > 0) prompt += '\\nJoin links:\\n' + joinLinks.join('\\n') + '\\n';\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  messages: [{ role: 'user', content: prompt }]\n}}];"
+        "jsCode": "const enrichedData = $(\"Enrich Standup Context\").first().json;\nconst slackResults = $input.all().map(item => item.json);\n\nconst slackContext = slackResults.filter(r => r.text).slice(0, 8).map(r => {\n  return \"- [\" + (r.username || \"unknown\") + \" in #\" + ((r.channel && r.channel.name) || \"dm\") + \"]: \" + (r.text || \"\").substring(0, 200);\n}).join(\"\\n\");\n\nconst sprintContent = enrichedData.sprintContent || \"\";\nconst stateContext = enrichedData.stateContext || \"\";\nconst meetings = enrichedData.meetings;\n\nfunction buildPrompt(m) {\n  const att = m.attendees.map(a => a.name + \" (\" + a.email + \")\").join(\", \");\n  const desc = m.description ? m.description.substring(0, 500) : \"\";\n\n  if (m.meetingType === \"DAILY_STANDUP\") {\n    return [\n      \"You are preparing Nelson's daily standup brief.\",\n      \"\",\n      \"SPRINT DATA:\",\n      sprintContent || \"No active sprint data available.\",\n      \"\",\n      \"STATE/AUTOMATION CONTEXT:\",\n      stateContext || \"No state context available.\",\n      \"\",\n      \"Format the output EXACTLY as:\",\n      \"\\u2705 *Shipped*\",\n      \"\\u2022 [item] \\u2014 [brief note]\",\n      \"\",\n      \"\\ud83d\\udd04 *In Progress*\",\n      \"\\u2022 [item] \\u2014 [status/next step]\",\n      \"\",\n      \"\\ud83d\\udea7 *Blockers*\",\n      \"\\u2022 [item] \\u2014 [what's blocking]\",\n      \"\",\n      'If no items in a category, write \"None\". Keep each bullet to one line. Max 12 bullets total.'\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"CLIENT_CALL\") {\n    return [\n      \"Prep brief for a client call.\",\n      \"Client: \" + (m.clientName || \"Unknown\"),\n      \"Meeting: \" + m.title + \" at \" + m.start + \" (\" + m.duration + \"min)\",\n      \"Attendees: \" + att,\n      desc ? \"Agenda: \" + desc : \"\",\n      \"\",\n      \"Recent Slack context:\",\n      slackContext || \"No recent Slack context found.\",\n      \"\",\n      \"Format:\",\n      \"*Context* \\u2014 1-2 sentences on where things stand with this client\",\n      \"*Talking Points* \\u2014 3-5 bullets\",\n      \"*Questions to Ask* \\u2014 2-3 bullets\",\n      \"*Open Items* \\u2014 anything Nelson needs to follow up on\"\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"ONE_ON_ONE\") {\n    return [\n      \"1:1 prep for Nelson.\",\n      \"With: \" + (m.personName || att),\n      desc ? \"Agenda: \" + desc : \"\",\n      \"\",\n      \"Recent Slack:\",\n      slackContext || \"No recent Slack context found.\",\n      \"\",\n      \"Format:\",\n      \"*Context* \\u2014 relationship/recent work\",\n      \"*Topics to Cover* \\u2014 3-4 bullets\",\n      \"*Bring Up* \\u2014 anything outstanding\"\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"KICKOFF\") {\n    return [\n      \"Kickoff prep.\",\n      \"Meeting: \" + m.title + \" at \" + m.start,\n      \"Attendees: \" + att,\n      desc ? \"Background: \" + desc : \"\",\n      \"\",\n      \"Format:\",\n      \"*Goals* \\u2014 what should be established in this kickoff\",\n      \"*Key Questions* \\u2014 4-5 questions to get answered\",\n      \"*Attendees & Roles* \\u2014 who's who\"\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"EXTERNAL_CALL\") {\n    return [\n      \"External call prep.\",\n      \"Meeting: \" + m.title + \" at \" + m.start,\n      \"External attendees: \" + att,\n      desc ? \"Context: \" + desc : \"\",\n      \"\",\n      \"Format:\",\n      \"*Who They Are* \\u2014 1-2 sentences\",\n      \"*What to Watch For* \\u2014 2-3 bullets\",\n      \"*Questions to Ask* \\u2014 3 questions\"\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"INTERNAL_SYNC\") {\n    return [\n      \"Internal sync prep.\",\n      \"Meeting: \" + m.title + \" at \" + m.start,\n      \"With: \" + att,\n      desc ? \"Agenda: \" + desc : \"\",\n      \"\",\n      \"Recent Slack:\",\n      slackContext || \"No recent Slack context found.\",\n      \"\",\n      \"Format:\",\n      \"*Likely Agenda* \\u2014 1-2 sentences\",\n      \"*Bring Up* \\u2014 2-3 bullets\",\n      \"*Prepare* \\u2014 anything to have ready\"\n    ].join(\"\\n\");\n  }\n\n  // UNKNOWN\n  return [\n    \"Quick meeting prep.\",\n    \"Meeting: \" + m.title + \" at \" + m.start,\n    att ? \"With: \" + att : \"\",\n    desc ? \"Description: \" + desc : \"\",\n    \"\",\n    \"Best guess at context from Slack:\",\n    slackContext || \"No recent context found.\",\n    \"\",\n    \"Format:\",\n    \"*Best Guess Context* \\u2014 2-3 sentences on what this might be about\",\n    \"*Suggested Prep* \\u2014 2-3 bullets\",\n    \"\",\n    \"_Note: Low context on this meeting. A brief description added to the calendar event would let me give you a much better brief._\"\n  ].join(\"\\n\");\n}\n\nlet prompt = \"\";\nif (meetings.length === 1) {\n  prompt = buildPrompt(meetings[0]);\n} else {\n  prompt = \"Generate prep briefs for the following \" + meetings.length + \" meetings. Keep each one concise.\\n\\n\";\n  meetings.forEach((m, i) => {\n    prompt += \"--- MEETING \" + (i + 1) + \" ---\\n\" + buildPrompt(m) + \"\\n\\n\";\n  });\n}\n\nreturn [{ json: {\n  model: \"claude-sonnet-4-6\",\n  max_tokens: 1024,\n  messages: [{ role: \"user\", content: prompt }]\n}}];"
       }
     },
     {
@@ -150,8 +150,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1940,
-        300
+        2620,
+        200
       ],
       "parameters": {
         "method": "POST",
@@ -186,13 +186,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2220,
-        300
+        2900,
+        200
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "var response = $input.first().json;\nvar briefText;\ntry {\n  briefText = response.content[0].text;\n} catch (e) {\n  briefText = 'Error generating prep brief: ' + e.message;\n}\n\nvar message = '*Meeting Prep Brief*\\n\\n' + briefText + '\\n\\n_\\u2726 Iris \\u2014 Nelson\\'s personal AI assistant_';\nreturn [{ json: { message: message } }];"
+        "jsCode": "const response = $input.first().json;\nconst enrichedData = $(\"Enrich Standup Context\").first().json;\nlet briefText;\ntry { briefText = response.content[0].text; } catch(e) { briefText = \"Error generating brief: \" + e.message; }\n\nconst meetings = enrichedData.meetings;\nconst typeEmoji = {\n  DAILY_STANDUP: \":speech_balloon:\",\n  CLIENT_CALL: \":handshake:\",\n  ONE_ON_ONE: \":people_holding_hands:\",\n  KICKOFF: \":rocket:\",\n  EXTERNAL_CALL: \":globe_with_meridians:\",\n  INTERNAL_SYNC: \":arrows_counterclockwise:\",\n  UNKNOWN: \":calendar:\"\n};\n\nlet message = \"\";\n\nif (meetings.length === 1) {\n  const m = meetings[0];\n  const emoji = typeEmoji[m.meetingType] || \":calendar:\";\n  const typeLabel = (m.meetingType || \"UNKNOWN\").replace(/_/g, \" \");\n\n  message += \"*\" + emoji + \" \" + m.title + \"*\\n\";\n  message += \"_\" + typeLabel + \" \\u00b7 \" + m.start + \"\\u2013\" + m.end + \" \\u00b7 \" + m.duration + \"min_\\n\\n\";\n  message += briefText + \"\\n\";\n\n  if (m.joinLink) {\n    message += \"\\n<\" + m.joinLink + \"|:video_camera: Join Meeting>\\n\";\n  }\n} else {\n  message += \"*:calendar: Meeting Prep Brief*\\n\";\n  message += \"_\" + meetings.length + \" meetings coming up_\\n\\n\";\n  message += briefText + \"\\n\";\n\n  const joinLinks = meetings.filter(m => m.joinLink).map(m => \"<\" + m.joinLink + \"|:video_camera: \" + m.title + \">\");\n  if (joinLinks.length > 0) {\n    message += \"\\n*Join Links:*\\n\" + joinLinks.join(\"\\n\") + \"\\n\";\n  }\n}\n\nmessage += \"\\n_\\u2726 Iris \\u2014 Nelson's personal AI assistant_\";\n\nreturn [{ json: { message: message } }];"
       }
     },
     {
@@ -201,8 +201,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
       "position": [
-        2500,
-        300
+        3180,
+        200
       ],
       "parameters": {
         "resource": "message",
@@ -213,9 +213,8 @@
           "mode": "id",
           "value": "U0AS1DLUKQV"
         },
-        "messageType": "text",
-        "text": "={{ $json.message }}",
-        "otherOptions": {}
+        "messageType": "block",
+        "blocksUi": "={{ JSON.stringify($json.blocks) }}"
       },
       "webhookId": "336436d8-700a-49f8-bb7b-e5578a7a2e9a",
       "credentials": {
@@ -231,8 +230,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1380,
-        500
+        1800,
+        580
       ],
       "parameters": {}
     },
@@ -283,49 +282,33 @@
       }
     },
     {
-      "id": "31def174-adf7-4150-87ad-4c096344c89c",
-      "name": "Check Business Hours",
+      "id": "5bfcb2a8-0ea9-4728-940e-3208593aee92",
+      "name": "Classify Meeting Type",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        380,
+        960,
         400
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const now = new Date();\nconst ptStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });\nconst ptTime = new Date(ptStr);\nconst hour = ptTime.getHours();\nconst day = ptTime.getDay();\nconst isWeekday = day >= 1 && day <= 5;\nconst isBusinessHours = isWeekday && hour >= 8 && hour < 22;\nreturn [{ json: { is_business_hours: isBusinessHours, pt_hour: hour, pt_day: day } }];"
+        "jsCode": "const CLIENTS = [\"solvable\", \"revelry\", \"garden cup\", \"gardencup\", \"bare home\", \"barehome\", \"lab golf\", \"labgolf\", \"nectar sleep\", \"nectarsleep\"];\nconst AQ_DOMAIN = \"adquadrant.com\";\n\nfunction classifyMeeting(m) {\n  const title = (m.title || \"\").toLowerCase();\n  const desc = (m.description || \"\").toLowerCase();\n  const text = title + \" \" + desc;\n  const attendees = m.attendees || [];\n  const hasExternal = attendees.some(a => a.email && !a.email.endsWith(\"@\" + AQ_DOMAIN));\n\n  if (/huddle|standup|stand-up|daily standup|daily scrum/.test(title)) {\n    return { meetingType: \"DAILY_STANDUP\", confidence: \"high\" };\n  }\n  if (/1:1|1-on-1|one on one|1 on 1/.test(title)) {\n    const person = attendees.find(a => !a.self);\n    return { meetingType: \"ONE_ON_ONE\", confidence: \"high\", personName: person ? person.name : null };\n  }\n  for (const client of CLIENTS) {\n    if (text.includes(client)) {\n      const clientName = client.split(\" \").map(w => w[0].toUpperCase() + w.slice(1)).join(\" \");\n      return { meetingType: \"CLIENT_CALL\", confidence: \"high\", clientName };\n    }\n  }\n  if (/kickoff|kick off|kick-off/.test(title)) {\n    return { meetingType: \"KICKOFF\", confidence: \"high\" };\n  }\n  if (hasExternal) {\n    return { meetingType: \"EXTERNAL_CALL\", confidence: \"medium\" };\n  }\n  if (attendees.length > 0) {\n    return { meetingType: \"INTERNAL_SYNC\", confidence: \"medium\" };\n  }\n  return { meetingType: \"UNKNOWN\", confidence: \"low\" };\n}\n\nconst meetingData = $input.first().json;\nif (!meetingData.has_meetings) return [{ json: meetingData }];\n\nconst classifiedMeetings = meetingData.meetings.map(m => ({ ...m, ...classifyMeeting(m) }));\nreturn [{ json: { ...meetingData, meetings: classifiedMeetings } }];"
       }
     },
     {
-      "id": "9875e190-5348-462e-ab4c-c5f23e109115",
-      "name": "Is Business Hours?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
+      "id": "7e37f3fc-1dd0-4515-b762-444d7807f041",
+      "name": "Enrich Standup Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        380,
-        550
+        1240,
+        300
       ],
       "parameters": {
-        "conditions": {
-          "combinator": "and",
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "leftValue": "={{ $json.is_business_hours }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true"
-              }
-            }
-          ]
-        }
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const fs = require(\"fs\");\nconst path = require(\"path\");\n\nconst meetingData = $input.first().json;\nconst hasStandup = meetingData.meetings && meetingData.meetings.some(m => m.meetingType === \"DAILY_STANDUP\");\n\nif (!hasStandup) {\n  return [{ json: { ...meetingData, sprintContent: \"\", stateContext: \"\" } }];\n}\n\nlet sprintContent = \"\";\ntry {\n  const sprintsDir = \"/Users/nelson/vaults/MindPalace/Adquadrant/Sprints\";\n  const files = fs.readdirSync(sprintsDir).filter(f => f.endsWith(\".md\")).sort().reverse();\n  for (const file of files) {\n    const content = fs.readFileSync(path.join(sprintsDir, file), \"utf8\");\n    if (content.includes(\"<!-- status: active -->\")) {\n      sprintContent = content;\n      break;\n    }\n  }\n  if (!sprintContent) sprintContent = \"No active sprint file found.\";\n} catch (e) {\n  sprintContent = \"Error reading sprint: \" + e.message;\n}\n\nlet stateContext = \"\";\ntry {\n  const content = fs.readFileSync(\"/Users/nelson/vaults/MindPalace/Agents/SharedMemory/STATE.md\", \"utf8\");\n  const sections = [\"## Current Sprint\", \"## Active Client Work\", \"## Morning Brief Reminders\"];\n  for (const section of sections) {\n    const start = content.indexOf(section);\n    if (start === -1) continue;\n    const nextHeader = content.indexOf(\"\\n## \", start + section.length);\n    const end = nextHeader === -1 ? content.length : nextHeader;\n    stateContext += content.slice(start, end).trim() + \"\\n\\n\";\n  }\n  if (!stateContext) stateContext = \"No relevant state context found.\";\n} catch (e) {\n  stateContext = \"Error reading STATE.md: \" + e.message;\n}\n\nreturn [{ json: { ...meetingData, sprintContent, stateContext } }];"
       }
     }
   ],
@@ -335,6 +318,28 @@
         [
           {
             "node": "Check Business Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Business Hours": {
+      "main": [
+        [
+          {
+            "node": "Is Business Hours?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Business Hours?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Upcoming Meetings",
             "type": "main",
             "index": 0
           }
@@ -356,6 +361,17 @@
       "main": [
         [
           {
+            "node": "Classify Meeting Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Meeting Type": {
+      "main": [
+        [
+          {
             "node": "Has Meetings to Prep?",
             "type": "main",
             "index": 0
@@ -367,7 +383,7 @@
       "main": [
         [
           {
-            "node": "Search Slack Context",
+            "node": "Enrich Standup Context",
             "type": "main",
             "index": 0
           }
@@ -375,6 +391,17 @@
         [
           {
             "node": "No Meetings to Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Standup Context": {
+      "main": [
+        [
+          {
+            "node": "Search Slack Context",
             "type": "main",
             "index": 0
           }
@@ -424,28 +451,6 @@
           }
         ]
       ]
-    },
-    "Check Business Hours": {
-      "main": [
-        [
-          {
-            "node": "Is Business Hours?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Is Business Hours?": {
-      "main": [
-        [
-          {
-            "node": "Check Business Hours",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "settings": {
@@ -460,8 +465,8 @@
     },
     "global": {
       "prepped": {
-        "prep_2l99orig80he2l5ssguemsohut_20260508T163000Z": "2026-05-08T16:00:13.306Z",
-        "prep_321qn9svva7cfap4ulhpqb82b6_20260508T170000Z": "2026-05-08T16:30:13.244Z"
+        "prep_2o261k95kc8rqk2avtqdjq1qiu": "2026-05-12T22:00:20.255Z",
+        "prep_5aj87i586mpbodbjihuiioq910": "2026-05-12T22:30:20.228Z"
       }
     }
   },
@@ -469,8 +474,8 @@
     "aiBuilderAssisted": true
   },
   "pinData": null,
-  "versionId": "df9d9fb5-26d2-47e2-a408-2e6c7ceab8fe",
-  "activeVersionId": "df9d9fb5-26d2-47e2-a408-2e6c7ceab8fe",
+  "versionId": "3b034528-3cc5-4064-80e3-e658888cd947",
+  "activeVersionId": "3b034528-3cc5-4064-80e3-e658888cd947",
   "triggerCount": 1,
   "shared": [
     {
@@ -482,9 +487,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-10T14:52:02.000Z",
-    "createdAt": "2026-05-09T16:42:57.351Z",
-    "versionId": "df9d9fb5-26d2-47e2-a408-2e6c7ceab8fe",
+    "updatedAt": "2026-05-12T19:04:29.536Z",
+    "createdAt": "2026-05-12T19:04:29.536Z",
+    "versionId": "3b034528-3cc5-4064-80e3-e658888cd947",
     "workflowId": "sCiBWFHwOLL4Lt37",
     "nodes": [
       {
@@ -560,7 +565,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
-          1100,
+          1800,
           400
         ],
         "parameters": {
@@ -590,8 +595,8 @@
         "type": "n8n-nodes-base.slack",
         "typeVersion": 2.4,
         "position": [
-          1380,
-          300
+          2060,
+          200
         ],
         "parameters": {
           "resource": "message",
@@ -616,13 +621,13 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          1660,
-          300
+          2340,
+          200
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
           "language": "javaScript",
-          "jsCode": "var meetingData = $('Prepare Meeting Data').first().json;\nvar slackResults = $input.all().map(function(item) { return item.json; });\n\nvar slackContext = slackResults.filter(function(r) { return r.text; }).slice(0, 8).map(function(r) {\n  return '- [' + (r.username || 'unknown') + ' in #' + (r.channel && r.channel.name || 'dm') + ']: ' + (r.text || '').substring(0, 200);\n}).join('\\n');\n\nvar meetingLines = meetingData.meetings.map(function(m) {\n  var attendeeStr = m.attendees.map(function(a) { return a.name + ' (' + a.email + ')'; }).join(', ');\n  return '- ' + m.title + ' at ' + m.start + ' (' + m.duration + 'min)\\n  Attendees: ' + attendeeStr + (m.description ? '\\n  Description: ' + m.description.substring(0, 300) : '');\n}).join('\\n');\n\nvar prompt = 'Generate a concise meeting prep brief. Keep it under 20 lines.\\n\\n';\nprompt += '## Upcoming Meetings\\n' + meetingLines + '\\n\\n';\nif (slackContext) prompt += '## Recent Slack Context\\n' + slackContext + '\\n\\n';\nprompt += '## Output Format\\nFor each meeting:\\n';\nprompt += '1. One-line summary of what this meeting is about\\n';\nprompt += '2. Key attendees and their likely roles/interests\\n';\nprompt += '3. Recent context from Slack (if relevant)\\n';\nprompt += '4. Suggested talking points or things to prepare\\n';\nprompt += '5. Join link (if available)\\n';\n\nvar joinLinks = meetingData.meetings.filter(function(m) { return m.joinLink; }).map(function(m) { return m.title + ': ' + m.joinLink; });\nif (joinLinks.length > 0) prompt += '\\nJoin links:\\n' + joinLinks.join('\\n') + '\\n';\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  messages: [{ role: 'user', content: prompt }]\n}}];"
+          "jsCode": "const enrichedData = $(\"Enrich Standup Context\").first().json;\nconst slackResults = $input.all().map(item => item.json);\n\nconst slackContext = slackResults.filter(r => r.text).slice(0, 8).map(r => {\n  return \"- [\" + (r.username || \"unknown\") + \" in #\" + ((r.channel && r.channel.name) || \"dm\") + \"]: \" + (r.text || \"\").substring(0, 200);\n}).join(\"\\n\");\n\nconst sprintContent = enrichedData.sprintContent || \"\";\nconst stateContext = enrichedData.stateContext || \"\";\nconst meetings = enrichedData.meetings;\n\nfunction buildPrompt(m) {\n  const att = m.attendees.map(a => a.name + \" (\" + a.email + \")\").join(\", \");\n  const desc = m.description ? m.description.substring(0, 500) : \"\";\n\n  if (m.meetingType === \"DAILY_STANDUP\") {\n    return [\n      \"You are preparing Nelson's daily standup brief.\",\n      \"\",\n      \"SPRINT DATA:\",\n      sprintContent || \"No active sprint data available.\",\n      \"\",\n      \"STATE/AUTOMATION CONTEXT:\",\n      stateContext || \"No state context available.\",\n      \"\",\n      \"Format the output EXACTLY as:\",\n      \"\\u2705 *Shipped*\",\n      \"\\u2022 [item] \\u2014 [brief note]\",\n      \"\",\n      \"\\ud83d\\udd04 *In Progress*\",\n      \"\\u2022 [item] \\u2014 [status/next step]\",\n      \"\",\n      \"\\ud83d\\udea7 *Blockers*\",\n      \"\\u2022 [item] \\u2014 [what's blocking]\",\n      \"\",\n      'If no items in a category, write \"None\". Keep each bullet to one line. Max 12 bullets total.'\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"CLIENT_CALL\") {\n    return [\n      \"Prep brief for a client call.\",\n      \"Client: \" + (m.clientName || \"Unknown\"),\n      \"Meeting: \" + m.title + \" at \" + m.start + \" (\" + m.duration + \"min)\",\n      \"Attendees: \" + att,\n      desc ? \"Agenda: \" + desc : \"\",\n      \"\",\n      \"Recent Slack context:\",\n      slackContext || \"No recent Slack context found.\",\n      \"\",\n      \"Format:\",\n      \"*Context* \\u2014 1-2 sentences on where things stand with this client\",\n      \"*Talking Points* \\u2014 3-5 bullets\",\n      \"*Questions to Ask* \\u2014 2-3 bullets\",\n      \"*Open Items* \\u2014 anything Nelson needs to follow up on\"\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"ONE_ON_ONE\") {\n    return [\n      \"1:1 prep for Nelson.\",\n      \"With: \" + (m.personName || att),\n      desc ? \"Agenda: \" + desc : \"\",\n      \"\",\n      \"Recent Slack:\",\n      slackContext || \"No recent Slack context found.\",\n      \"\",\n      \"Format:\",\n      \"*Context* \\u2014 relationship/recent work\",\n      \"*Topics to Cover* \\u2014 3-4 bullets\",\n      \"*Bring Up* \\u2014 anything outstanding\"\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"KICKOFF\") {\n    return [\n      \"Kickoff prep.\",\n      \"Meeting: \" + m.title + \" at \" + m.start,\n      \"Attendees: \" + att,\n      desc ? \"Background: \" + desc : \"\",\n      \"\",\n      \"Format:\",\n      \"*Goals* \\u2014 what should be established in this kickoff\",\n      \"*Key Questions* \\u2014 4-5 questions to get answered\",\n      \"*Attendees & Roles* \\u2014 who's who\"\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"EXTERNAL_CALL\") {\n    return [\n      \"External call prep.\",\n      \"Meeting: \" + m.title + \" at \" + m.start,\n      \"External attendees: \" + att,\n      desc ? \"Context: \" + desc : \"\",\n      \"\",\n      \"Format:\",\n      \"*Who They Are* \\u2014 1-2 sentences\",\n      \"*What to Watch For* \\u2014 2-3 bullets\",\n      \"*Questions to Ask* \\u2014 3 questions\"\n    ].join(\"\\n\");\n  }\n\n  if (m.meetingType === \"INTERNAL_SYNC\") {\n    return [\n      \"Internal sync prep.\",\n      \"Meeting: \" + m.title + \" at \" + m.start,\n      \"With: \" + att,\n      desc ? \"Agenda: \" + desc : \"\",\n      \"\",\n      \"Recent Slack:\",\n      slackContext || \"No recent Slack context found.\",\n      \"\",\n      \"Format:\",\n      \"*Likely Agenda* \\u2014 1-2 sentences\",\n      \"*Bring Up* \\u2014 2-3 bullets\",\n      \"*Prepare* \\u2014 anything to have ready\"\n    ].join(\"\\n\");\n  }\n\n  // UNKNOWN\n  return [\n    \"Quick meeting prep.\",\n    \"Meeting: \" + m.title + \" at \" + m.start,\n    att ? \"With: \" + att : \"\",\n    desc ? \"Description: \" + desc : \"\",\n    \"\",\n    \"Best guess at context from Slack:\",\n    slackContext || \"No recent context found.\",\n    \"\",\n    \"Format:\",\n    \"*Best Guess Context* \\u2014 2-3 sentences on what this might be about\",\n    \"*Suggested Prep* \\u2014 2-3 bullets\",\n    \"\",\n    \"_Note: Low context on this meeting. A brief description added to the calendar event would let me give you a much better brief._\"\n  ].join(\"\\n\");\n}\n\nlet prompt = \"\";\nif (meetings.length === 1) {\n  prompt = buildPrompt(meetings[0]);\n} else {\n  prompt = \"Generate prep briefs for the following \" + meetings.length + \" meetings. Keep each one concise.\\n\\n\";\n  meetings.forEach((m, i) => {\n    prompt += \"--- MEETING \" + (i + 1) + \" ---\\n\" + buildPrompt(m) + \"\\n\\n\";\n  });\n}\n\nreturn [{ json: {\n  model: \"claude-sonnet-4-6\",\n  max_tokens: 1024,\n  messages: [{ role: \"user\", content: prompt }]\n}}];"
         }
       },
       {
@@ -631,8 +636,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          1940,
-          300
+          2620,
+          200
         ],
         "parameters": {
           "method": "POST",
@@ -667,13 +672,13 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          2220,
-          300
+          2900,
+          200
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
           "language": "javaScript",
-          "jsCode": "var response = $input.first().json;\nvar briefText;\ntry {\n  briefText = response.content[0].text;\n} catch (e) {\n  briefText = 'Error generating prep brief: ' + e.message;\n}\n\nvar message = '*Meeting Prep Brief*\\n\\n' + briefText + '\\n\\n_\\u2726 Iris \\u2014 Nelson\\'s personal AI assistant_';\nreturn [{ json: { message: message } }];"
+          "jsCode": "const response = $input.first().json;\nconst enrichedData = $(\"Enrich Standup Context\").first().json;\nlet briefText;\ntry { briefText = response.content[0].text; } catch(e) { briefText = \"Error generating brief: \" + e.message; }\n\nconst meetings = enrichedData.meetings;\nconst typeEmoji = {\n  DAILY_STANDUP: \":speech_balloon:\",\n  CLIENT_CALL: \":handshake:\",\n  ONE_ON_ONE: \":people_holding_hands:\",\n  KICKOFF: \":rocket:\",\n  EXTERNAL_CALL: \":globe_with_meridians:\",\n  INTERNAL_SYNC: \":arrows_counterclockwise:\",\n  UNKNOWN: \":calendar:\"\n};\n\nlet message = \"\";\n\nif (meetings.length === 1) {\n  const m = meetings[0];\n  const emoji = typeEmoji[m.meetingType] || \":calendar:\";\n  const typeLabel = (m.meetingType || \"UNKNOWN\").replace(/_/g, \" \");\n\n  message += \"*\" + emoji + \" \" + m.title + \"*\\n\";\n  message += \"_\" + typeLabel + \" \\u00b7 \" + m.start + \"\\u2013\" + m.end + \" \\u00b7 \" + m.duration + \"min_\\n\\n\";\n  message += briefText + \"\\n\";\n\n  if (m.joinLink) {\n    message += \"\\n<\" + m.joinLink + \"|:video_camera: Join Meeting>\\n\";\n  }\n} else {\n  message += \"*:calendar: Meeting Prep Brief*\\n\";\n  message += \"_\" + meetings.length + \" meetings coming up_\\n\\n\";\n  message += briefText + \"\\n\";\n\n  const joinLinks = meetings.filter(m => m.joinLink).map(m => \"<\" + m.joinLink + \"|:video_camera: \" + m.title + \">\");\n  if (joinLinks.length > 0) {\n    message += \"\\n*Join Links:*\\n\" + joinLinks.join(\"\\n\") + \"\\n\";\n  }\n}\n\nmessage += \"\\n_\\u2726 Iris \\u2014 Nelson's personal AI assistant_\";\n\nreturn [{ json: { message: message } }];"
         }
       },
       {
@@ -682,8 +687,8 @@
         "type": "n8n-nodes-base.slack",
         "typeVersion": 2.4,
         "position": [
-          2500,
-          300
+          3180,
+          200
         ],
         "parameters": {
           "resource": "message",
@@ -694,9 +699,8 @@
             "mode": "id",
             "value": "U0AS1DLUKQV"
           },
-          "messageType": "text",
-          "text": "={{ $json.message }}",
-          "otherOptions": {}
+          "messageType": "block",
+          "blocksUi": "={{ JSON.stringify($json.blocks) }}"
         },
         "webhookId": "336436d8-700a-49f8-bb7b-e5578a7a2e9a",
         "credentials": {
@@ -712,8 +716,8 @@
         "type": "n8n-nodes-base.noOp",
         "typeVersion": 1,
         "position": [
-          1380,
-          500
+          1800,
+          580
         ],
         "parameters": {}
       },
@@ -764,49 +768,33 @@
         }
       },
       {
-        "id": "31def174-adf7-4150-87ad-4c096344c89c",
-        "name": "Check Business Hours",
+        "id": "5bfcb2a8-0ea9-4728-940e-3208593aee92",
+        "name": "Classify Meeting Type",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          380,
+          960,
           400
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
           "language": "javaScript",
-          "jsCode": "const now = new Date();\nconst ptStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });\nconst ptTime = new Date(ptStr);\nconst hour = ptTime.getHours();\nconst day = ptTime.getDay();\nconst isWeekday = day >= 1 && day <= 5;\nconst isBusinessHours = isWeekday && hour >= 8 && hour < 22;\nreturn [{ json: { is_business_hours: isBusinessHours, pt_hour: hour, pt_day: day } }];"
+          "jsCode": "const CLIENTS = [\"solvable\", \"revelry\", \"garden cup\", \"gardencup\", \"bare home\", \"barehome\", \"lab golf\", \"labgolf\", \"nectar sleep\", \"nectarsleep\"];\nconst AQ_DOMAIN = \"adquadrant.com\";\n\nfunction classifyMeeting(m) {\n  const title = (m.title || \"\").toLowerCase();\n  const desc = (m.description || \"\").toLowerCase();\n  const text = title + \" \" + desc;\n  const attendees = m.attendees || [];\n  const hasExternal = attendees.some(a => a.email && !a.email.endsWith(\"@\" + AQ_DOMAIN));\n\n  if (/huddle|standup|stand-up|daily standup|daily scrum/.test(title)) {\n    return { meetingType: \"DAILY_STANDUP\", confidence: \"high\" };\n  }\n  if (/1:1|1-on-1|one on one|1 on 1/.test(title)) {\n    const person = attendees.find(a => !a.self);\n    return { meetingType: \"ONE_ON_ONE\", confidence: \"high\", personName: person ? person.name : null };\n  }\n  for (const client of CLIENTS) {\n    if (text.includes(client)) {\n      const clientName = client.split(\" \").map(w => w[0].toUpperCase() + w.slice(1)).join(\" \");\n      return { meetingType: \"CLIENT_CALL\", confidence: \"high\", clientName };\n    }\n  }\n  if (/kickoff|kick off|kick-off/.test(title)) {\n    return { meetingType: \"KICKOFF\", confidence: \"high\" };\n  }\n  if (hasExternal) {\n    return { meetingType: \"EXTERNAL_CALL\", confidence: \"medium\" };\n  }\n  if (attendees.length > 0) {\n    return { meetingType: \"INTERNAL_SYNC\", confidence: \"medium\" };\n  }\n  return { meetingType: \"UNKNOWN\", confidence: \"low\" };\n}\n\nconst meetingData = $input.first().json;\nif (!meetingData.has_meetings) return [{ json: meetingData }];\n\nconst classifiedMeetings = meetingData.meetings.map(m => ({ ...m, ...classifyMeeting(m) }));\nreturn [{ json: { ...meetingData, meetings: classifiedMeetings } }];"
         }
       },
       {
-        "id": "9875e190-5348-462e-ab4c-c5f23e109115",
-        "name": "Is Business Hours?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3,
+        "id": "7e37f3fc-1dd0-4515-b762-444d7807f041",
+        "name": "Enrich Standup Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
         "position": [
-          380,
-          550
+          1240,
+          300
         ],
         "parameters": {
-          "conditions": {
-            "combinator": "and",
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "leftValue": "={{ $json.is_business_hours }}",
-                "rightValue": true,
-                "operator": {
-                  "type": "boolean",
-                  "operation": "true"
-                }
-              }
-            ]
-          }
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const fs = require(\"fs\");\nconst path = require(\"path\");\n\nconst meetingData = $input.first().json;\nconst hasStandup = meetingData.meetings && meetingData.meetings.some(m => m.meetingType === \"DAILY_STANDUP\");\n\nif (!hasStandup) {\n  return [{ json: { ...meetingData, sprintContent: \"\", stateContext: \"\" } }];\n}\n\nlet sprintContent = \"\";\ntry {\n  const sprintsDir = \"/Users/nelson/vaults/MindPalace/Adquadrant/Sprints\";\n  const files = fs.readdirSync(sprintsDir).filter(f => f.endsWith(\".md\")).sort().reverse();\n  for (const file of files) {\n    const content = fs.readFileSync(path.join(sprintsDir, file), \"utf8\");\n    if (content.includes(\"<!-- status: active -->\")) {\n      sprintContent = content;\n      break;\n    }\n  }\n  if (!sprintContent) sprintContent = \"No active sprint file found.\";\n} catch (e) {\n  sprintContent = \"Error reading sprint: \" + e.message;\n}\n\nlet stateContext = \"\";\ntry {\n  const content = fs.readFileSync(\"/Users/nelson/vaults/MindPalace/Agents/SharedMemory/STATE.md\", \"utf8\");\n  const sections = [\"## Current Sprint\", \"## Active Client Work\", \"## Morning Brief Reminders\"];\n  for (const section of sections) {\n    const start = content.indexOf(section);\n    if (start === -1) continue;\n    const nextHeader = content.indexOf(\"\\n## \", start + section.length);\n    const end = nextHeader === -1 ? content.length : nextHeader;\n    stateContext += content.slice(start, end).trim() + \"\\n\\n\";\n  }\n  if (!stateContext) stateContext = \"No relevant state context found.\";\n} catch (e) {\n  stateContext = \"Error reading STATE.md: \" + e.message;\n}\n\nreturn [{ json: { ...meetingData, sprintContent, stateContext } }];"
         }
       }
     ],
@@ -816,6 +804,28 @@
           [
             {
               "node": "Check Business Hours",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Business Hours": {
+        "main": [
+          [
+            {
+              "node": "Is Business Hours?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Business Hours?": {
+        "main": [
+          [
+            {
+              "node": "Fetch Upcoming Meetings",
               "type": "main",
               "index": 0
             }
@@ -837,6 +847,17 @@
         "main": [
           [
             {
+              "node": "Classify Meeting Type",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Classify Meeting Type": {
+        "main": [
+          [
+            {
               "node": "Has Meetings to Prep?",
               "type": "main",
               "index": 0
@@ -848,7 +869,7 @@
         "main": [
           [
             {
-              "node": "Search Slack Context",
+              "node": "Enrich Standup Context",
               "type": "main",
               "index": 0
             }
@@ -856,6 +877,17 @@
           [
             {
               "node": "No Meetings to Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enrich Standup Context": {
+        "main": [
+          [
+            {
+              "node": "Search Slack Context",
               "type": "main",
               "index": 0
             }
@@ -905,33 +937,11 @@
             }
           ]
         ]
-      },
-      "Check Business Hours": {
-        "main": [
-          [
-            {
-              "node": "Is Business Hours?",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Is Business Hours?": {
-        "main": [
-          [
-            {
-              "node": "Check Business Hours",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
       }
     },
     "authors": "Nelson Torres",
-    "name": "Version df9d9fb5",
-    "description": "",
+    "name": null,
+    "description": null,
     "autosaved": false
   },
   "tags": []
