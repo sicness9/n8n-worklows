@@ -365,7 +365,23 @@
       "recurrenceRules": []
     },
     "global": {
-      "heldItems": []
+      "heldItems": [
+        {
+          "title": "Obtain AWS Repository Access",
+          "meeting": "James: Learning Session",
+          "stored_at": "2026-05-12T23:40:32.153Z"
+        },
+        {
+          "title": "Obtain BigQuery Infrastructure Document from Vish",
+          "meeting": "James: Learning Session",
+          "stored_at": "2026-05-12T23:40:32.153Z"
+        },
+        {
+          "title": "Create Campaign Setup Documentation Video",
+          "meeting": "James: Learning Session",
+          "stored_at": "2026-05-12T23:40:32.153Z"
+        }
+      ]
     }
   },
   "meta": null,
