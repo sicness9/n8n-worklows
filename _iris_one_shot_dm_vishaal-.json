@@ -1,10 +1,10 @@
 {
-  "updatedAt": "2026-05-08T17:06:22.757Z",
+  "updatedAt": "2026-05-12T22:46:07.000Z",
   "createdAt": "2026-05-08T17:06:22.757Z",
   "id": "3I4BiZVPPMDparyh",
   "name": "_iris_one_shot_dm_vishaal",
   "active": false,
-  "isArchived": false,
+  "isArchived": true,
   "nodes": [
     {
       "id": "trigger",
@@ -70,7 +70,7 @@
   "staticData": null,
   "meta": null,
   "pinData": null,
-  "versionId": "1e0986d0-7181-4f71-83c0-8d3eb9611dd1",
+  "versionId": "60ac558e-3192-4a7c-af91-115d6d327601",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
