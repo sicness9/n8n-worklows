@@ -1,0 +1,459 @@
+{
+  "updatedAt": "2026-05-12T22:45:50.520Z",
+  "createdAt": "2026-05-12T15:30:28.646Z",
+  "id": "dvdTW7uZDki5EfnU",
+  "name": "Session Summarize Webhook",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "name": "Session Summarize",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "session-summarize",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "session-summarize",
+        "responseMode": "lastNode"
+      },
+      "id": "1a9f54e7-1431-4486-987c-6a8782dfe670"
+    },
+    {
+      "name": "Filter Transcript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const items = $input.all();\nconst data = items[0].json;\n\nconst body = data.body || data;\nconst transcript = body.transcript || [];\nconst sessionId = body.session_id || '';\nconst timestamp = body.timestamp || '';\n\nconst assistantTexts = [];\nfor (const entry of transcript) {\n  if (entry.role !== 'assistant') continue;\n  if (typeof entry.content === 'string') {\n    assistantTexts.push(entry.content);\n  } else if (Array.isArray(entry.content)) {\n    for (const block of entry.content) {\n      if (block.type === 'text' && block.text) {\n        assistantTexts.push(block.text);\n      }\n    }\n  }\n}\n\nlet filteredText = assistantTexts.join('\\n\\n').trim();\nconst hasContent = filteredText.length > 100;\n\nif (filteredText.length > 50000) {\n  filteredText = filteredText.slice(-50000);\n}\n\nreturn [{\n  json: { sessionId, timestamp, filteredText, hasContent }\n}];"
+      },
+      "id": "6fe9f478-cb0f-4b42-add8-1fbd1ee458e3"
+    },
+    {
+      "name": "Has Content?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.hasContent }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "1d6f2f0b-6f80-4534-a45a-4f8815d8dde5"
+    },
+    {
+      "name": "Build Claude Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const data = $input.first().json;\n\nconst prompt = `Summarize this Claude Code session in 3-5 bullet points. Focus on: decisions made, automations built or modified, tickets resolved, blockers surfaced, and any context Nelson will need next session. Be specific — include client names, tool names, task titles. Skip filler. Output ONLY the bullet points as a markdown list (- bullet), no headers or preamble.\n\n<transcript>\n${data.filteredText}\n</transcript>`;\n\nreturn [{\n  json: {\n    model: 'claude-haiku-4-5-20251001',\n    max_tokens: 1024,\n    messages: [{ role: 'user', content: prompt }]\n  }\n}];"
+      },
+      "id": "c2c6dfa2-22b8-4934-912a-9033c6aeebd2"
+    },
+    {
+      "name": "Summarize via Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qjdLurgn1OANVO3L",
+          "name": "Header Auth account"
+        }
+      },
+      "id": "f8dfd388-9e41-4541-a639-8f7fdb36279f"
+    },
+    {
+      "name": "Format Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const claudeResponse = $input.first().json;\nconst filterData = $('Filter Transcript').first().json;\n\nlet summary = '';\nif (claudeResponse.content && Array.isArray(claudeResponse.content)) {\n  for (const block of claudeResponse.content) {\n    if (block.type === 'text') {\n      summary += block.text;\n    }\n  }\n}\n\nif (!summary.trim()) {\n  summary = `_Session ${filterData.sessionId} — Claude summarization returned empty. Manual summary needed._`;\n}\n\nreturn [{\n  json: {\n    sessionId: filterData.sessionId,\n    timestamp: filterData.timestamp,\n    summary: summary.trim()\n  }\n}];"
+      },
+      "id": "f34535ef-d0fe-456f-a7e5-48a8fc91396c"
+    },
+    {
+      "name": "No Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        450
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const filterData = $('Filter Transcript').first().json;\n\nreturn [{\n  json: {\n    sessionId: filterData.sessionId,\n    timestamp: filterData.timestamp,\n    summary: `_Session ${filterData.sessionId} — no substantive content to summarize._`\n  }\n}];"
+      },
+      "id": "4e2a3fc9-dd1b-4040-aa1c-a0268d179c2f"
+    }
+  ],
+  "connections": {
+    "Session Summarize": {
+      "main": [
+        [
+          {
+            "node": "Filter Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Transcript": {
+      "main": [
+        [
+          {
+            "node": "Has Content?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Content?": {
+      "main": [
+        [
+          {
+            "node": "Build Claude Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Claude Payload": {
+      "main": [
+        [
+          {
+            "node": "Summarize via Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize via Claude": {
+      "main": [
+        [
+          {
+            "node": "Format Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "750a3529-57cf-4c71-90b5-5a125b0f4efe",
+  "activeVersionId": "750a3529-57cf-4c71-90b5-5a125b0f4efe",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-05-12T15:30:28.650Z",
+      "createdAt": "2026-05-12T15:30:28.650Z",
+      "role": "workflow:owner",
+      "workflowId": "dvdTW7uZDki5EfnU",
+      "projectId": "TxCYhXtkt9tpKOLj"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-05-12T15:38:07.081Z",
+    "createdAt": "2026-05-12T15:38:07.081Z",
+    "versionId": "750a3529-57cf-4c71-90b5-5a125b0f4efe",
+    "workflowId": "dvdTW7uZDki5EfnU",
+    "nodes": [
+      {
+        "name": "Session Summarize",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          240,
+          300
+        ],
+        "webhookId": "session-summarize",
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "session-summarize",
+          "responseMode": "lastNode"
+        },
+        "id": "1a9f54e7-1431-4486-987c-6a8782dfe670"
+      },
+      {
+        "name": "Filter Transcript",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          480,
+          300
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const items = $input.all();\nconst data = items[0].json;\n\nconst body = data.body || data;\nconst transcript = body.transcript || [];\nconst sessionId = body.session_id || '';\nconst timestamp = body.timestamp || '';\n\nconst assistantTexts = [];\nfor (const entry of transcript) {\n  if (entry.role !== 'assistant') continue;\n  if (typeof entry.content === 'string') {\n    assistantTexts.push(entry.content);\n  } else if (Array.isArray(entry.content)) {\n    for (const block of entry.content) {\n      if (block.type === 'text' && block.text) {\n        assistantTexts.push(block.text);\n      }\n    }\n  }\n}\n\nlet filteredText = assistantTexts.join('\\n\\n').trim();\nconst hasContent = filteredText.length > 100;\n\nif (filteredText.length > 50000) {\n  filteredText = filteredText.slice(-50000);\n}\n\nreturn [{\n  json: { sessionId, timestamp, filteredText, hasContent }\n}];"
+        },
+        "id": "6fe9f478-cb0f-4b42-add8-1fbd1ee458e3"
+      },
+      {
+        "name": "Has Content?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          720,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.hasContent }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "id": "1d6f2f0b-6f80-4534-a45a-4f8815d8dde5"
+      },
+      {
+        "name": "Build Claude Payload",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          960,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const data = $input.first().json;\n\nconst prompt = `Summarize this Claude Code session in 3-5 bullet points. Focus on: decisions made, automations built or modified, tickets resolved, blockers surfaced, and any context Nelson will need next session. Be specific — include client names, tool names, task titles. Skip filler. Output ONLY the bullet points as a markdown list (- bullet), no headers or preamble.\n\n<transcript>\n${data.filteredText}\n</transcript>`;\n\nreturn [{\n  json: {\n    model: 'claude-haiku-4-5-20251001',\n    max_tokens: 1024,\n    messages: [{ role: 'user', content: prompt }]\n  }\n}];"
+        },
+        "id": "c2c6dfa2-22b8-4934-912a-9033c6aeebd2"
+      },
+      {
+        "name": "Summarize via Claude",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1200,
+          200
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "anthropic-version",
+                "value": "2023-06-01"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json) }}",
+          "options": {
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "qjdLurgn1OANVO3L",
+            "name": "Header Auth account"
+          }
+        },
+        "id": "f8dfd388-9e41-4541-a639-8f7fdb36279f"
+      },
+      {
+        "name": "Format Summary",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1440,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const claudeResponse = $input.first().json;\nconst filterData = $('Filter Transcript').first().json;\n\nlet summary = '';\nif (claudeResponse.content && Array.isArray(claudeResponse.content)) {\n  for (const block of claudeResponse.content) {\n    if (block.type === 'text') {\n      summary += block.text;\n    }\n  }\n}\n\nif (!summary.trim()) {\n  summary = `_Session ${filterData.sessionId} — Claude summarization returned empty. Manual summary needed._`;\n}\n\nreturn [{\n  json: {\n    sessionId: filterData.sessionId,\n    timestamp: filterData.timestamp,\n    summary: summary.trim()\n  }\n}];"
+        },
+        "id": "f34535ef-d0fe-456f-a7e5-48a8fc91396c"
+      },
+      {
+        "name": "No Content",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          960,
+          450
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const filterData = $('Filter Transcript').first().json;\n\nreturn [{\n  json: {\n    sessionId: filterData.sessionId,\n    timestamp: filterData.timestamp,\n    summary: `_Session ${filterData.sessionId} — no substantive content to summarize._`\n  }\n}];"
+        },
+        "id": "4e2a3fc9-dd1b-4040-aa1c-a0268d179c2f"
+      }
+    ],
+    "connections": {
+      "Session Summarize": {
+        "main": [
+          [
+            {
+              "node": "Filter Transcript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Transcript": {
+        "main": [
+          [
+            {
+              "node": "Has Content?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Content?": {
+        "main": [
+          [
+            {
+              "node": "Build Claude Payload",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Content",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Claude Payload": {
+        "main": [
+          [
+            {
+              "node": "Summarize via Claude",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Summarize via Claude": {
+        "main": [
+          [
+            {
+              "node": "Format Summary",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Nelson Torres",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}
