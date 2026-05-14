@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-12T22:45:53.666Z",
+  "updatedAt": "2026-05-13T16:33:29.837Z",
   "createdAt": "2026-05-11T12:08:42.136Z",
   "id": "kBxN2QvrOmOAja3w",
   "name": "Claude Receiver — Health Watchdog",
@@ -7,13 +7,6 @@
   "isArchived": false,
   "nodes": [
     {
-      "name": "Every 15 Minutes",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        240,
-        300
-      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -24,16 +17,16 @@
           ]
         }
       },
+      "name": "Every 15 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        304
+      ],
       "id": "e17d9029-71e8-4f90-aef2-a4c494c25247"
     },
     {
-      "name": "Business Hours?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        460,
-        300
-      ],
       "parameters": {
         "conditions": {
           "combinator": "and",
@@ -69,41 +62,41 @@
               }
             }
           ]
-        }
+        },
+        "options": {}
       },
+      "name": "Business Hours?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        464,
+        304
+      ],
       "id": "34af9d2c-291e-4dbe-8c18-feacb7b43ea3"
     },
     {
+      "parameters": {
+        "url": "http://host.docker.internal:8765/health",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 5000
+        }
+      },
       "name": "GET /health",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        680,
-        200
+        688,
+        208
       ],
-      "parameters": {
-        "method": "GET",
-        "url": "http://127.0.0.1:8765/health",
-        "options": {
-          "timeout": 5000,
-          "response": {
-            "response": {
-              "neverError": true,
-              "fullResponse": true
-            }
-          }
-        }
-      },
       "id": "1e5e0a37-d043-4692-b91f-6a8607b230a8"
     },
     {
-      "name": "Status OK?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        900,
-        200
-      ],
       "parameters": {
         "conditions": {
           "combinator": "and",
@@ -123,52 +116,57 @@
               }
             }
           ]
-        }
+        },
+        "options": {}
       },
+      "name": "Status OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        208
+      ],
       "id": "248e7cca-ec46-41e2-af90-92159e479585"
     },
     {
+      "parameters": {},
       "name": "All Good",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
         1120,
-        100
+        112
       ],
-      "parameters": {},
       "id": "9d6cf481-60d5-4386-85d0-aff1d402e1e9"
     },
     {
-      "name": "Alert Nelson",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.4,
-      "position": [
-        1120,
-        300
-      ],
-      "credentials": {
-        "slackApi": {
-          "id": "ie6DnUT6N6lLxV3B",
-          "name": "Bot OAuth Scoped"
-        }
-      },
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "select": "channel",
         "channelId": {
           "__rl": true,
           "mode": "id",
           "value": "U0AS1DLUKQV"
         },
-        "messageType": "text",
         "text": "🔴 Claude receiver is down — check launchd service\n`launchctl kickstart -k gui/$(id -u)/com.adquadrant.claude-receiver`",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
       },
+      "name": "Alert Nelson",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        304
+      ],
       "id": "7e76e070-28b6-4371-8a70-a28c1ebc1dc5",
-      "webhookId": "80060f63-9105-4b20-8fa6-e76ca5080b56"
+      "webhookId": "80060f63-9105-4b20-8fa6-e76ca5080b56",
+      "credentials": {
+        "slackApi": {
+          "id": "ie6DnUT6N6lLxV3B",
+          "name": "Bot OAuth Scoped"
+        }
+      }
     }
   ],
   "connections": {
@@ -227,7 +225,8 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "binaryMode": "separate"
   },
   "staticData": {
     "node:Every 15 Minutes": {
@@ -235,9 +234,9 @@
     }
   },
   "meta": null,
-  "pinData": null,
-  "versionId": "dac3b81b-5e77-486b-a591-ca9c8794efee",
-  "activeVersionId": "dac3b81b-5e77-486b-a591-ca9c8794efee",
+  "pinData": {},
+  "versionId": "53111146-4302-49df-a07c-b18368ca7729",
+  "activeVersionId": "53111146-4302-49df-a07c-b18368ca7729",
   "triggerCount": 1,
   "shared": [
     {
@@ -249,19 +248,12 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-11T12:09:45.117Z",
-    "createdAt": "2026-05-11T12:09:45.117Z",
-    "versionId": "dac3b81b-5e77-486b-a591-ca9c8794efee",
+    "updatedAt": "2026-05-13T16:33:33.000Z",
+    "createdAt": "2026-05-13T16:33:29.838Z",
+    "versionId": "53111146-4302-49df-a07c-b18368ca7729",
     "workflowId": "kBxN2QvrOmOAja3w",
     "nodes": [
       {
-        "name": "Every 15 Minutes",
-        "type": "n8n-nodes-base.scheduleTrigger",
-        "typeVersion": 1.3,
-        "position": [
-          240,
-          300
-        ],
         "parameters": {
           "rule": {
             "interval": [
@@ -272,16 +264,16 @@
             ]
           }
         },
+        "name": "Every 15 Minutes",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          240,
+          304
+        ],
         "id": "e17d9029-71e8-4f90-aef2-a4c494c25247"
       },
       {
-        "name": "Business Hours?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3,
-        "position": [
-          460,
-          300
-        ],
         "parameters": {
           "conditions": {
             "combinator": "and",
@@ -317,41 +309,41 @@
                 }
               }
             ]
-          }
+          },
+          "options": {}
         },
+        "name": "Business Hours?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          464,
+          304
+        ],
         "id": "34af9d2c-291e-4dbe-8c18-feacb7b43ea3"
       },
       {
+        "parameters": {
+          "url": "http://host.docker.internal:8765/health",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 5000
+          }
+        },
         "name": "GET /health",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          680,
-          200
+          688,
+          208
         ],
-        "parameters": {
-          "method": "GET",
-          "url": "http://127.0.0.1:8765/health",
-          "options": {
-            "timeout": 5000,
-            "response": {
-              "response": {
-                "neverError": true,
-                "fullResponse": true
-              }
-            }
-          }
-        },
         "id": "1e5e0a37-d043-4692-b91f-6a8607b230a8"
       },
       {
-        "name": "Status OK?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3,
-        "position": [
-          900,
-          200
-        ],
         "parameters": {
           "conditions": {
             "combinator": "and",
@@ -371,52 +363,57 @@
                 }
               }
             ]
-          }
+          },
+          "options": {}
         },
+        "name": "Status OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          912,
+          208
+        ],
         "id": "248e7cca-ec46-41e2-af90-92159e479585"
       },
       {
+        "parameters": {},
         "name": "All Good",
         "type": "n8n-nodes-base.noOp",
         "typeVersion": 1,
         "position": [
           1120,
-          100
+          112
         ],
-        "parameters": {},
         "id": "9d6cf481-60d5-4386-85d0-aff1d402e1e9"
       },
       {
-        "name": "Alert Nelson",
-        "type": "n8n-nodes-base.slack",
-        "typeVersion": 2.4,
-        "position": [
-          1120,
-          300
-        ],
-        "credentials": {
-          "slackApi": {
-            "id": "ie6DnUT6N6lLxV3B",
-            "name": "Bot OAuth Scoped"
-          }
-        },
         "parameters": {
-          "resource": "message",
-          "operation": "post",
           "select": "channel",
           "channelId": {
             "__rl": true,
             "mode": "id",
             "value": "U0AS1DLUKQV"
           },
-          "messageType": "text",
           "text": "🔴 Claude receiver is down — check launchd service\n`launchctl kickstart -k gui/$(id -u)/com.adquadrant.claude-receiver`",
           "otherOptions": {
             "includeLinkToWorkflow": false
           }
         },
+        "name": "Alert Nelson",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          1120,
+          304
+        ],
         "id": "7e76e070-28b6-4371-8a70-a28c1ebc1dc5",
-        "webhookId": "80060f63-9105-4b20-8fa6-e76ca5080b56"
+        "webhookId": "80060f63-9105-4b20-8fa6-e76ca5080b56",
+        "credentials": {
+          "slackApi": {
+            "id": "ie6DnUT6N6lLxV3B",
+            "name": "Bot OAuth Scoped"
+          }
+        }
       }
     ],
     "connections": {
@@ -473,9 +470,9 @@
       }
     },
     "authors": "Nelson Torres",
-    "name": null,
-    "description": null,
-    "autosaved": false
+    "name": "Version 53111146",
+    "description": "",
+    "autosaved": true
   },
   "tags": []
 }
