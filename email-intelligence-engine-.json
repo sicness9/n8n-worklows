@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-08T16:44:43.130Z",
+  "updatedAt": "2026-05-13T20:16:07.716Z",
   "createdAt": "2026-05-05T22:06:52.265Z",
   "id": "QlG1fDHb6qpVX4xa",
   "name": "Email Intelligence Engine",
@@ -29,7 +29,7 @@
       "typeVersion": 1.2,
       "position": [
         240,
-        1152
+        1296
       ],
       "credentials": {
         "gmailOAuth2": {
@@ -48,7 +48,7 @@
       "typeVersion": 2,
       "position": [
         688,
-        1152
+        1296
       ]
     },
     {
@@ -77,7 +77,7 @@
       "typeVersion": 4.4,
       "position": [
         912,
-        1152
+        1296
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -96,7 +96,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        1152
+        1296
       ]
     },
     {
@@ -284,7 +284,7 @@
       "typeVersion": 3.4,
       "position": [
         1360,
-        384
+        432
       ]
     },
     {
@@ -302,7 +302,7 @@
       "typeVersion": 4.4,
       "position": [
         1584,
-        -96
+        48
       ]
     },
     {
@@ -317,7 +317,7 @@
       "typeVersion": 3.4,
       "position": [
         1584,
-        288
+        432
       ]
     },
     {
@@ -332,7 +332,7 @@
       "typeVersion": 3.4,
       "position": [
         1584,
-        480
+        624
       ]
     },
     {
@@ -347,7 +347,7 @@
       "typeVersion": 3.4,
       "position": [
         1584,
-        672
+        816
       ]
     },
     {
@@ -367,7 +367,7 @@
       "typeVersion": 2.2,
       "position": [
         1584,
-        864
+        1008
       ],
       "webhookId": "1bc910a5-779e-4f30-82af-de918a3c174d",
       "credentials": {
@@ -391,7 +391,7 @@
       "typeVersion": 2.2,
       "position": [
         464,
-        1152
+        1296
       ],
       "webhookId": "c11fb4c3-0b41-454e-84cf-451d18da0cf8",
       "credentials": {
@@ -414,7 +414,7 @@
       "typeVersion": 2.2,
       "position": [
         1360,
-        1056
+        1200
       ],
       "webhookId": "be4ef711-5d98-4817-9673-758c2ab3b320",
       "credentials": {
@@ -456,7 +456,7 @@
       "typeVersion": 2.2,
       "position": [
         1360,
-        1248
+        1392
       ]
     },
     {
@@ -472,7 +472,7 @@
       "typeVersion": 2.2,
       "position": [
         1584,
-        1248
+        1392
       ],
       "webhookId": "b80e105e-67f5-4fa4-988d-163f4fc30e53",
       "credentials": {
@@ -495,7 +495,7 @@
       "typeVersion": 2.2,
       "position": [
         1808,
-        1248
+        1392
       ],
       "webhookId": "e6222fb3-0936-41e3-a9d4-18a388fd7a47",
       "credentials": {
@@ -534,7 +534,7 @@
       "typeVersion": 2.2,
       "position": [
         1360,
-        1440
+        1584
       ]
     },
     {
@@ -551,7 +551,7 @@
       "typeVersion": 2.2,
       "position": [
         1584,
-        1440
+        1584
       ],
       "webhookId": "051b1234-a3fa-4b81-82d9-bbfa5e82251b",
       "credentials": {
@@ -577,7 +577,7 @@
       "typeVersion": 2.1,
       "position": [
         1584,
-        96
+        240
       ],
       "webhookId": "158a0049-9c5c-47c3-ab7f-c1d410bd9d70",
       "credentials": {
@@ -659,7 +659,7 @@
       "typeVersion": 2.1,
       "position": [
         1584,
-        1056
+        1200
       ],
       "webhookId": "d5837222-563a-4ba1-b6a9-af48a0379c55",
       "credentials": {
@@ -857,16 +857,16 @@
   "staticData": {
     "node:Gmail Trigger": {
       "Gmail Trigger": {
-        "lastTimeChecked": 1778643811,
+        "lastTimeChecked": 1778730210,
         "possibleDuplicates": [
-          "19e1f6ecb4c23c70"
+          "19e2495204b2231e"
         ]
       }
     }
   },
   "meta": null,
   "pinData": {},
-  "versionId": "28a0b7dc-577a-4e83-affd-7510afe1115b",
+  "versionId": "e30a24d1-070b-4ab9-a818-caa16138ae72",
   "activeVersionId": "28a0b7dc-577a-4e83-affd-7510afe1115b",
   "triggerCount": 1,
   "shared": [
