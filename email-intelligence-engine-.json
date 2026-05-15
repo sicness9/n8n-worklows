@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-13T20:16:07.716Z",
+  "updatedAt": "2026-05-14T21:29:29.343Z",
   "createdAt": "2026-05-05T22:06:52.265Z",
   "id": "QlG1fDHb6qpVX4xa",
   "name": "Email Intelligence Engine",
@@ -40,7 +40,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const email = $('Gmail Trigger').first().json;\n\nconst labelContext = `Existing labels (use exact names):\n  - AdQuadrant\n  - TikTok\n  - Asana\n  - Operations\n  - Google\n  - Meta\n  - Forwarded for James\n  - Affiliate Email Group\n  - Shopify\n  - Snapchat\n  - Reddit\n  - LinkedIn\n  - Pinterest`;\n\nconst promptLines = [\n  '# Email Classifier for Iris (Nelson Torres, AdQuadrant)',\n  '',\n  'Classify the email and decide organizational actions. Apply the FIRST matching class rule.',\n  '',\n  '### 1. TRANSCRIPT',\n  'Match if: sender domain is fireflies.ai/otter.ai/zoom.us/fathom.video/grain.com,',\n  'or sender contains notetaker@/transcript@/recording@,',\n  'or sender is meet-recordings-noreply@google.com or gemini-notes@google.com,',\n  'or subject contains: transcript/recording/meeting notes/meeting summary,',\n  'or body > 1500 chars AND subject mentions meeting/call/sync/standup/review/demo.',\n  '',\n  '### 2. ACTION_REQUIRED',\n  'Match if ANY of:',\n  '- Email directly addressed to Nelson requiring a decision, response, or task.',\n  '- A named individual invited Nelson to a platform/tool/team (e.g. \"X invited you to join...\").',\n  '- Access grant, approval request, partner request, or account action triggered by a specific person.',\n  '- Invite link present that expires or requires acceptance.',\n  'Extract: {action_summary: one sentence of what Nelson must DO,',\n  '  sender_name: first name or name of person who triggered it,',\n  '  deadline: date string or null,',\n  '  urgency: \"high\" if from AJ/Vish/Hailey/Lindsay/Daniel or deadline within 24h, else \"normal\"}',\n  '',\n  '### 3. NEWSLETTER',\n  'Match if: mass-send marketing email.',\n  'Strong signals: List-Unsubscribe header present, body contains unsubscribe/view-in-browser/email-preferences.',\n  'Weak signals: no-reply/do-not-reply sender, promotional language.',\n  'EXCEPTION: Do NOT classify as NEWSLETTER if a named individual triggered the email (invite, team add, access grant).',\n  'Extract: {sender_name, sender_email, is_new_sender: boolean}',\n  '',\n  '### 4. SPAM',\n  'Match if: unknown sender + no legitimate context, phishing/lottery/prize language.',\n  'Only classify SPAM if confidence > 95%.',\n  '',\n  '### 5. SCHEDULING',\n  'Match if: explicit date/time proposed, scheduling phrases, calendar/meeting links from a person.',\n  'Extract: {proposed_times: [], attendees: [], topic, meeting_link}',\n  '',\n  '### 6. WAITING_FOR_REPLY',\n  'Match if: Nelson sent the last message in a thread and this is a reply arriving.',\n  'Extract: {recipient_name, recipient_email, subject, thread_id}',\n  '',\n  '### 7. FYI',\n  'Informational, receipts, CC announcements, system notifications, onboarding/welcome emails with no required action.',\n  'Extract: {subject, sender_name}',\n  '',\n  '## Organizational Actions (org)',\n  'After classifying, decide:',\n  '',\n  '**apply_labels**: Array of existing label names to apply. Pick from this list ONLY:',\n  labelContext,\n  'Rules:',\n  '  - AdQuadrant \\u2192 sender email ends in @adquadrant.com',\n  '  - Meta \\u2192 from Meta, Facebook, Instagram business platforms',\n  '  - TikTok \\u2192 from TikTok business platforms',\n  '  - Google \\u2192 from Google Ads, Analytics, Search Console, or Google alerts',\n  '  - Asana \\u2192 from Asana',\n  '  - Operations \\u2192 operational/infrastructure notifications',\n  '  - Shopify \\u2192 from Shopify business platforms',\n  '  - Snapchat \\u2192 from Snapchat business platforms',\n  '  - Reddit \\u2192 from Reddit business platforms',\n  '  - LinkedIn \\u2192 from LinkedIn',\n  '  - Pinterest \\u2192 from Pinterest business platforms',\n  '  - Apply the most specific label available',\n  '',\n  '**new_label**: null, OR {name: \"Platform/Type\", purpose: \"one line\"} if no existing label fits',\n  '  and this is clearly a recurring category (e.g. \"Shopify/Notifications\", \"LinkedIn/Invites\").',\n  '  Follow the Platform/Type naming convention. Only create when confident it will recur.',\n  '',\n  '**archive**: true if the email has been handled by labeling and does not need to stay in inbox',\n  '  (newsletters, FYI receipts, automated alerts already routed to a label).',\n  '  ACTION_REQUIRED emails are NEVER archived.',\n  '',\n  '**trash**: true ONLY for SPAM class with >95% confidence. Never trash borderline cases.',\n  '',\n  '**note**: null, or one-line note ONLY if creating a new label or making a non-obvious decision.',\n  '',\n  '## Return Format',\n  'Return ONLY valid JSON, no markdown fences:',\n  '{\"class\":\"CLASS\",\"data\":{...},\"org\":{\"apply_labels\":[],\"new_label\":null,\"archive\":false,\"trash\":false,\"note\":null}}'\n];\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  system: promptLines.join('\\n'),\n  messages: [{ role: 'user', content:\n    'From: ' + (email.from || '') +\n    '\\nSubject: ' + (email.subject || '') +\n    '\\nBody:\\n' + (email.textPlain || email.text || email.snippet || '(no body)').slice(0, 3000)\n  }]\n}}];"
+        "jsCode": "const email = $('Gmail Trigger').first().json;\n\nconst labelContext = `Existing labels (use exact names):\n  - AdQuadrant\n  - TikTok\n  - Asana\n  - Operations\n  - Google\n  - Meta\n  - Forwarded for James\n  - Affiliate Email Group\n  - Shopify\n  - Snapchat\n  - Reddit\n  - LinkedIn\n  - Pinterest`;\n\nconst promptLines = [\n  '# Email Classifier for Iris (Nelson Torres, AdQuadrant)',\n  '',\n  'Classify the email and decide organizational actions. Apply the FIRST matching class rule.',\n  '',\n  '### 1. TRANSCRIPT',\n  'Match if: sender domain is fireflies.ai/otter.ai/zoom.us/fathom.video/grain.com,',\n  'or sender contains notetaker@/transcript@/recording@,',\n  'or sender is meet-recordings-noreply@google.com or gemini-notes@google.com,',\n  'or subject contains: transcript/recording/meeting notes/meeting summary,',\n  'or body > 1500 chars AND subject mentions meeting/call/sync/standup/review/demo.',\n  '',\n  '### 2. ACTION_REQUIRED',\n  'Match if ANY of:',\n  '- Email directly addressed to Nelson requiring a decision, response, or task.',\n  '- A named individual invited Nelson to a platform/tool/team (e.g. \"X invited you to join...\").',\n  '- Access grant, approval request, partner request, or account action triggered by a specific person.',\n  '- Invite link present that expires or requires acceptance.',\n  'Extract: {action_summary: one sentence of what Nelson must DO,',\n  '  sender_name: first name or name of person who triggered it,',\n  '  deadline: date string or null,',\n  '  urgency: \"high\" if from AJ/Vish/Hailey/Lindsay/Daniel or deadline within 24h, else \"normal\"}',\n  '',\n  '### 3. NEWSLETTER',\n  'Match if: mass-send marketing email.',\n  'Strong signals: List-Unsubscribe header present, body contains unsubscribe/view-in-browser/email-preferences.',\n  'Weak signals: no-reply/do-not-reply sender, promotional language.',\n  'EXCEPTION: Do NOT classify as NEWSLETTER if a named individual triggered the email (invite, team add, access grant).',\n  'Extract: {sender_name, sender_email, is_new_sender: boolean}',\n  '',\n  '### 4. SPAM',\n  'Match if: unknown sender + no legitimate context, phishing/lottery/prize language.',\n  'Only classify SPAM if confidence > 95%.',\n  '',\n  '### 5. SCHEDULING',\n  'Match if: explicit date/time proposed, scheduling phrases, calendar/meeting links from a person.',\n  'Extract: {proposed_times: [], attendees: [], topic, meeting_link}',\n  '',\n  '### 6. WAITING_FOR_REPLY',\n  'Match if: Nelson sent the last message in a thread and this is a reply arriving.',\n  'Extract: {recipient_name, recipient_email, subject, thread_id}',\n  '',\n  '### 7. FYI',\n  'Informational, receipts, CC announcements, system notifications, onboarding/welcome emails with no required action.',\n  'Extract: {subject, sender_name}',\n  '',\n  '## Organizational Actions (org)',\n  'After classifying, decide:',\n  '',\n  '**apply_labels**: Array of existing label names to apply. Pick from this list ONLY:',\n  labelContext,\n  'Rules:',\n  '  - AdQuadrant \\u2192 sender email ends in @adquadrant.com',\n  '  - Meta \\u2192 from Meta, Facebook, Instagram business platforms',\n  '  - TikTok \\u2192 from TikTok business platforms',\n  '  - Google \\u2192 from Google Ads, Analytics, Search Console, or Google alerts',\n  '  - Asana \\u2192 from Asana',\n  '  - Operations \\u2192 operational/infrastructure notifications',\n  '  - Shopify \\u2192 from Shopify business platforms',\n  '  - Snapchat \\u2192 from Snapchat business platforms',\n  '  - Reddit \\u2192 from Reddit business platforms',\n  '  - LinkedIn \\u2192 from LinkedIn',\n  '  - Pinterest \\u2192 from Pinterest business platforms',\n  '  - Apply the most specific label available',\n  '',\n  '**new_label**: Always null. Do NOT suggest new labels.',\n  '',\n  '**archive**: true if the email has been handled by labeling and does not need to stay in inbox',\n  '  (newsletters, FYI receipts, automated alerts already routed to a label).',\n  '  ACTION_REQUIRED emails are NEVER archived.',\n  '',\n  '**trash**: true ONLY for SPAM class with >95% confidence. Never trash borderline cases.',\n  '',\n  '**note**: null, or one-line note ONLY if creating a new label or making a non-obvious decision.',\n  '',\n  '## Return Format',\n  'Return ONLY valid JSON, no markdown fences:',\n  '{\"class\":\"CLASS\",\"data\":{...},\"org\":{\"apply_labels\":[],\"new_label\":null,\"archive\":false,\"trash\":false,\"note\":null}}'\n];\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  system: promptLines.join('\\n'),\n  messages: [{ role: 'user', content:\n    'From: ' + (email.from || '') +\n    '\\nSubject: ' + (email.subject || '') +\n    '\\nBody:\\n' + (email.textPlain || email.text || email.snippet || '(no body)').slice(0, 3000)\n  }]\n}}];"
       },
       "id": "07e557d5-4bb4-430b-884d-dd78e25191f5",
       "name": "Build Classification Request",
@@ -432,86 +432,6 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "leftValue": "={{ $('Parse Classification').first().json.org.new_label?.name }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty"
-              },
-              "id": "c1c050a5-e087-4a47-bdc5-b1cbb9383f8d"
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "c94670f2-362c-46ca-830d-3fad3da9be6c",
-      "name": "Has New Label?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1360,
-        1392
-      ]
-    },
-    {
-      "parameters": {
-        "resource": "label",
-        "operation": "create",
-        "name": "={{ $('Parse Classification').first().json.org.new_label.name }}",
-        "options": {}
-      },
-      "id": "84251b33-cd36-4328-a922-aa684db280ff",
-      "name": "Create New Label",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.2,
-      "position": [
-        1584,
-        1392
-      ],
-      "webhookId": "b80e105e-67f5-4fa4-988d-163f4fc30e53",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "BioUrrORr4sw8djI",
-          "name": "Gmail account"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "operation": "addLabels",
-        "messageId": "={{ $('Parse Classification').first().json.emailId }}",
-        "labelIds": "={{ [$json.id] }}"
-      },
-      "id": "2b3ea19b-53fe-4753-b51d-d2ae60138472",
-      "name": "Apply New Label",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.2,
-      "position": [
-        1808,
-        1392
-      ],
-      "webhookId": "e6222fb3-0936-41e3-a9d4-18a388fd7a47",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "BioUrrORr4sw8djI",
-          "name": "Gmail account"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
             "typeValidation": "strict"
           },
           "conditions": [
@@ -718,11 +638,6 @@
             "index": 0
           },
           {
-            "node": "Has New Label?",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Archive Email?",
             "type": "main",
             "index": 0
@@ -799,29 +714,6 @@
         ]
       ]
     },
-    "Has New Label?": {
-      "main": [
-        [
-          {
-            "node": "Create New Label",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
-      ]
-    },
-    "Create New Label": {
-      "main": [
-        [
-          {
-            "node": "Apply New Label",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Archive Email?": {
       "main": [
         [
@@ -850,24 +742,25 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": true,
+    "availableInMCP": false,
     "binaryMode": "separate",
     "timezone": "America/New_York"
   },
   "staticData": {
     "node:Gmail Trigger": {
       "Gmail Trigger": {
-        "lastTimeChecked": 1778730210,
+        "lastTimeChecked": 1778816621,
         "possibleDuplicates": [
-          "19e2495204b2231e"
+          "19e29bb9d3069a5a",
+          "19e29bb7d0391498"
         ]
       }
     }
   },
   "meta": null,
   "pinData": {},
-  "versionId": "e30a24d1-070b-4ab9-a818-caa16138ae72",
-  "activeVersionId": "28a0b7dc-577a-4e83-affd-7510afe1115b",
+  "versionId": "e929db53-0a16-4e5a-97ad-b62b44b2d508",
+  "activeVersionId": "e929db53-0a16-4e5a-97ad-b62b44b2d508",
   "triggerCount": 1,
   "shared": [
     {
@@ -879,9 +772,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-08T18:05:26.000Z",
-    "createdAt": "2026-05-08T16:44:43.131Z",
-    "versionId": "28a0b7dc-577a-4e83-affd-7510afe1115b",
+    "updatedAt": "2026-05-14T21:29:29.344Z",
+    "createdAt": "2026-05-14T21:29:29.344Z",
+    "versionId": "e929db53-0a16-4e5a-97ad-b62b44b2d508",
     "workflowId": "QlG1fDHb6qpVX4xa",
     "nodes": [
       {
@@ -907,7 +800,7 @@
         "typeVersion": 1.2,
         "position": [
           240,
-          1152
+          1296
         ],
         "credentials": {
           "gmailOAuth2": {
@@ -918,7 +811,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const email = $('Gmail Trigger').first().json;\n\nconst labelContext = `Existing labels (use exact names):\n  - AdQuadrant\n  - TikTok\n  - Asana\n  - Operations\n  - Google\n  - Meta\n  - Forwarded for James\n  - Affiliate Email Group\n  - Shopify\n  - Snapchat\n  - Reddit\n  - LinkedIn\n  - Pinterest`;\n\nconst promptLines = [\n  '# Email Classifier for Iris (Nelson Torres, AdQuadrant)',\n  '',\n  'Classify the email and decide organizational actions. Apply the FIRST matching class rule.',\n  '',\n  '### 1. TRANSCRIPT',\n  'Match if: sender domain is fireflies.ai/otter.ai/zoom.us/fathom.video/grain.com,',\n  'or sender contains notetaker@/transcript@/recording@,',\n  'or sender is meet-recordings-noreply@google.com or gemini-notes@google.com,',\n  'or subject contains: transcript/recording/meeting notes/meeting summary,',\n  'or body > 1500 chars AND subject mentions meeting/call/sync/standup/review/demo.',\n  '',\n  '### 2. ACTION_REQUIRED',\n  'Match if ANY of:',\n  '- Email directly addressed to Nelson requiring a decision, response, or task.',\n  '- A named individual invited Nelson to a platform/tool/team (e.g. \"X invited you to join...\").',\n  '- Access grant, approval request, partner request, or account action triggered by a specific person.',\n  '- Invite link present that expires or requires acceptance.',\n  'Extract: {action_summary: one sentence of what Nelson must DO,',\n  '  sender_name: first name or name of person who triggered it,',\n  '  deadline: date string or null,',\n  '  urgency: \"high\" if from AJ/Vish/Hailey/Lindsay/Daniel or deadline within 24h, else \"normal\"}',\n  '',\n  '### 3. NEWSLETTER',\n  'Match if: mass-send marketing email.',\n  'Strong signals: List-Unsubscribe header present, body contains unsubscribe/view-in-browser/email-preferences.',\n  'Weak signals: no-reply/do-not-reply sender, promotional language.',\n  'EXCEPTION: Do NOT classify as NEWSLETTER if a named individual triggered the email (invite, team add, access grant).',\n  'Extract: {sender_name, sender_email, is_new_sender: boolean}',\n  '',\n  '### 4. SPAM',\n  'Match if: unknown sender + no legitimate context, phishing/lottery/prize language.',\n  'Only classify SPAM if confidence > 95%.',\n  '',\n  '### 5. SCHEDULING',\n  'Match if: explicit date/time proposed, scheduling phrases, calendar/meeting links from a person.',\n  'Extract: {proposed_times: [], attendees: [], topic, meeting_link}',\n  '',\n  '### 6. WAITING_FOR_REPLY',\n  'Match if: Nelson sent the last message in a thread and this is a reply arriving.',\n  'Extract: {recipient_name, recipient_email, subject, thread_id}',\n  '',\n  '### 7. FYI',\n  'Informational, receipts, CC announcements, system notifications, onboarding/welcome emails with no required action.',\n  'Extract: {subject, sender_name}',\n  '',\n  '## Organizational Actions (org)',\n  'After classifying, decide:',\n  '',\n  '**apply_labels**: Array of existing label names to apply. Pick from this list ONLY:',\n  labelContext,\n  'Rules:',\n  '  - AdQuadrant \\u2192 sender email ends in @adquadrant.com',\n  '  - Meta \\u2192 from Meta, Facebook, Instagram business platforms',\n  '  - TikTok \\u2192 from TikTok business platforms',\n  '  - Google \\u2192 from Google Ads, Analytics, Search Console, or Google alerts',\n  '  - Asana \\u2192 from Asana',\n  '  - Operations \\u2192 operational/infrastructure notifications',\n  '  - Shopify \\u2192 from Shopify business platforms',\n  '  - Snapchat \\u2192 from Snapchat business platforms',\n  '  - Reddit \\u2192 from Reddit business platforms',\n  '  - LinkedIn \\u2192 from LinkedIn',\n  '  - Pinterest \\u2192 from Pinterest business platforms',\n  '  - Apply the most specific label available',\n  '',\n  '**new_label**: null, OR {name: \"Platform/Type\", purpose: \"one line\"} if no existing label fits',\n  '  and this is clearly a recurring category (e.g. \"Shopify/Notifications\", \"LinkedIn/Invites\").',\n  '  Follow the Platform/Type naming convention. Only create when confident it will recur.',\n  '',\n  '**archive**: true if the email has been handled by labeling and does not need to stay in inbox',\n  '  (newsletters, FYI receipts, automated alerts already routed to a label).',\n  '  ACTION_REQUIRED emails are NEVER archived.',\n  '',\n  '**trash**: true ONLY for SPAM class with >95% confidence. Never trash borderline cases.',\n  '',\n  '**note**: null, or one-line note ONLY if creating a new label or making a non-obvious decision.',\n  '',\n  '## Return Format',\n  'Return ONLY valid JSON, no markdown fences:',\n  '{\"class\":\"CLASS\",\"data\":{...},\"org\":{\"apply_labels\":[],\"new_label\":null,\"archive\":false,\"trash\":false,\"note\":null}}'\n];\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  system: promptLines.join('\\n'),\n  messages: [{ role: 'user', content:\n    'From: ' + (email.from || '') +\n    '\\nSubject: ' + (email.subject || '') +\n    '\\nBody:\\n' + (email.textPlain || email.text || email.snippet || '(no body)').slice(0, 3000)\n  }]\n}}];"
+          "jsCode": "const email = $('Gmail Trigger').first().json;\n\nconst labelContext = `Existing labels (use exact names):\n  - AdQuadrant\n  - TikTok\n  - Asana\n  - Operations\n  - Google\n  - Meta\n  - Forwarded for James\n  - Affiliate Email Group\n  - Shopify\n  - Snapchat\n  - Reddit\n  - LinkedIn\n  - Pinterest`;\n\nconst promptLines = [\n  '# Email Classifier for Iris (Nelson Torres, AdQuadrant)',\n  '',\n  'Classify the email and decide organizational actions. Apply the FIRST matching class rule.',\n  '',\n  '### 1. TRANSCRIPT',\n  'Match if: sender domain is fireflies.ai/otter.ai/zoom.us/fathom.video/grain.com,',\n  'or sender contains notetaker@/transcript@/recording@,',\n  'or sender is meet-recordings-noreply@google.com or gemini-notes@google.com,',\n  'or subject contains: transcript/recording/meeting notes/meeting summary,',\n  'or body > 1500 chars AND subject mentions meeting/call/sync/standup/review/demo.',\n  '',\n  '### 2. ACTION_REQUIRED',\n  'Match if ANY of:',\n  '- Email directly addressed to Nelson requiring a decision, response, or task.',\n  '- A named individual invited Nelson to a platform/tool/team (e.g. \"X invited you to join...\").',\n  '- Access grant, approval request, partner request, or account action triggered by a specific person.',\n  '- Invite link present that expires or requires acceptance.',\n  'Extract: {action_summary: one sentence of what Nelson must DO,',\n  '  sender_name: first name or name of person who triggered it,',\n  '  deadline: date string or null,',\n  '  urgency: \"high\" if from AJ/Vish/Hailey/Lindsay/Daniel or deadline within 24h, else \"normal\"}',\n  '',\n  '### 3. NEWSLETTER',\n  'Match if: mass-send marketing email.',\n  'Strong signals: List-Unsubscribe header present, body contains unsubscribe/view-in-browser/email-preferences.',\n  'Weak signals: no-reply/do-not-reply sender, promotional language.',\n  'EXCEPTION: Do NOT classify as NEWSLETTER if a named individual triggered the email (invite, team add, access grant).',\n  'Extract: {sender_name, sender_email, is_new_sender: boolean}',\n  '',\n  '### 4. SPAM',\n  'Match if: unknown sender + no legitimate context, phishing/lottery/prize language.',\n  'Only classify SPAM if confidence > 95%.',\n  '',\n  '### 5. SCHEDULING',\n  'Match if: explicit date/time proposed, scheduling phrases, calendar/meeting links from a person.',\n  'Extract: {proposed_times: [], attendees: [], topic, meeting_link}',\n  '',\n  '### 6. WAITING_FOR_REPLY',\n  'Match if: Nelson sent the last message in a thread and this is a reply arriving.',\n  'Extract: {recipient_name, recipient_email, subject, thread_id}',\n  '',\n  '### 7. FYI',\n  'Informational, receipts, CC announcements, system notifications, onboarding/welcome emails with no required action.',\n  'Extract: {subject, sender_name}',\n  '',\n  '## Organizational Actions (org)',\n  'After classifying, decide:',\n  '',\n  '**apply_labels**: Array of existing label names to apply. Pick from this list ONLY:',\n  labelContext,\n  'Rules:',\n  '  - AdQuadrant \\u2192 sender email ends in @adquadrant.com',\n  '  - Meta \\u2192 from Meta, Facebook, Instagram business platforms',\n  '  - TikTok \\u2192 from TikTok business platforms',\n  '  - Google \\u2192 from Google Ads, Analytics, Search Console, or Google alerts',\n  '  - Asana \\u2192 from Asana',\n  '  - Operations \\u2192 operational/infrastructure notifications',\n  '  - Shopify \\u2192 from Shopify business platforms',\n  '  - Snapchat \\u2192 from Snapchat business platforms',\n  '  - Reddit \\u2192 from Reddit business platforms',\n  '  - LinkedIn \\u2192 from LinkedIn',\n  '  - Pinterest \\u2192 from Pinterest business platforms',\n  '  - Apply the most specific label available',\n  '',\n  '**new_label**: Always null. Do NOT suggest new labels.',\n  '',\n  '**archive**: true if the email has been handled by labeling and does not need to stay in inbox',\n  '  (newsletters, FYI receipts, automated alerts already routed to a label).',\n  '  ACTION_REQUIRED emails are NEVER archived.',\n  '',\n  '**trash**: true ONLY for SPAM class with >95% confidence. Never trash borderline cases.',\n  '',\n  '**note**: null, or one-line note ONLY if creating a new label or making a non-obvious decision.',\n  '',\n  '## Return Format',\n  'Return ONLY valid JSON, no markdown fences:',\n  '{\"class\":\"CLASS\",\"data\":{...},\"org\":{\"apply_labels\":[],\"new_label\":null,\"archive\":false,\"trash\":false,\"note\":null}}'\n];\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 1024,\n  system: promptLines.join('\\n'),\n  messages: [{ role: 'user', content:\n    'From: ' + (email.from || '') +\n    '\\nSubject: ' + (email.subject || '') +\n    '\\nBody:\\n' + (email.textPlain || email.text || email.snippet || '(no body)').slice(0, 3000)\n  }]\n}}];"
         },
         "id": "07e557d5-4bb4-430b-884d-dd78e25191f5",
         "name": "Build Classification Request",
@@ -926,7 +819,7 @@
         "typeVersion": 2,
         "position": [
           688,
-          1152
+          1296
         ]
       },
       {
@@ -955,7 +848,7 @@
         "typeVersion": 4.4,
         "position": [
           912,
-          1152
+          1296
         ],
         "credentials": {
           "httpHeaderAuth": {
@@ -974,7 +867,7 @@
         "typeVersion": 2,
         "position": [
           1136,
-          1152
+          1296
         ]
       },
       {
@@ -1162,7 +1055,7 @@
         "typeVersion": 3.4,
         "position": [
           1360,
-          384
+          432
         ]
       },
       {
@@ -1180,7 +1073,7 @@
         "typeVersion": 4.4,
         "position": [
           1584,
-          -96
+          48
         ]
       },
       {
@@ -1195,7 +1088,7 @@
         "typeVersion": 3.4,
         "position": [
           1584,
-          288
+          432
         ]
       },
       {
@@ -1210,7 +1103,7 @@
         "typeVersion": 3.4,
         "position": [
           1584,
-          480
+          624
         ]
       },
       {
@@ -1225,7 +1118,7 @@
         "typeVersion": 3.4,
         "position": [
           1584,
-          672
+          816
         ]
       },
       {
@@ -1245,7 +1138,7 @@
         "typeVersion": 2.2,
         "position": [
           1584,
-          864
+          1008
         ],
         "webhookId": "1bc910a5-779e-4f30-82af-de918a3c174d",
         "credentials": {
@@ -1269,7 +1162,7 @@
         "typeVersion": 2.2,
         "position": [
           464,
-          1152
+          1296
         ],
         "webhookId": "c11fb4c3-0b41-454e-84cf-451d18da0cf8",
         "credentials": {
@@ -1292,7 +1185,7 @@
         "typeVersion": 2.2,
         "position": [
           1360,
-          1056
+          1200
         ],
         "webhookId": "be4ef711-5d98-4817-9673-758c2ab3b320",
         "credentials": {
@@ -1302,86 +1195,6 @@
           }
         },
         "continueOnFail": true,
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "leftValue": "={{ $('Parse Classification').first().json.org.new_label?.name }}",
-                "rightValue": "",
-                "operator": {
-                  "type": "string",
-                  "operation": "notEmpty"
-                },
-                "id": "c1c050a5-e087-4a47-bdc5-b1cbb9383f8d"
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "c94670f2-362c-46ca-830d-3fad3da9be6c",
-        "name": "Has New Label?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          1360,
-          1248
-        ]
-      },
-      {
-        "parameters": {
-          "resource": "label",
-          "operation": "create",
-          "name": "={{ $('Parse Classification').first().json.org.new_label.name }}",
-          "options": {}
-        },
-        "id": "84251b33-cd36-4328-a922-aa684db280ff",
-        "name": "Create New Label",
-        "type": "n8n-nodes-base.gmail",
-        "typeVersion": 2.2,
-        "position": [
-          1584,
-          1248
-        ],
-        "webhookId": "b80e105e-67f5-4fa4-988d-163f4fc30e53",
-        "credentials": {
-          "gmailOAuth2": {
-            "id": "BioUrrORr4sw8djI",
-            "name": "Gmail account"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "operation": "addLabels",
-          "messageId": "={{ $('Parse Classification').first().json.emailId }}",
-          "labelIds": "={{ [$json.id] }}"
-        },
-        "id": "2b3ea19b-53fe-4753-b51d-d2ae60138472",
-        "name": "Apply New Label",
-        "type": "n8n-nodes-base.gmail",
-        "typeVersion": 2.2,
-        "position": [
-          1808,
-          1248
-        ],
-        "webhookId": "e6222fb3-0936-41e3-a9d4-18a388fd7a47",
-        "credentials": {
-          "gmailOAuth2": {
-            "id": "BioUrrORr4sw8djI",
-            "name": "Gmail account"
-          }
-        },
         "onError": "continueRegularOutput"
       },
       {
@@ -1412,7 +1225,7 @@
         "typeVersion": 2.2,
         "position": [
           1360,
-          1440
+          1584
         ]
       },
       {
@@ -1429,7 +1242,7 @@
         "typeVersion": 2.2,
         "position": [
           1584,
-          1440
+          1584
         ],
         "webhookId": "051b1234-a3fa-4b81-82d9-bbfa5e82251b",
         "credentials": {
@@ -1455,7 +1268,7 @@
         "typeVersion": 2.1,
         "position": [
           1584,
-          96
+          240
         ],
         "webhookId": "158a0049-9c5c-47c3-ab7f-c1d410bd9d70",
         "credentials": {
@@ -1537,7 +1350,7 @@
         "typeVersion": 2.1,
         "position": [
           1584,
-          1056
+          1200
         ],
         "webhookId": "d5837222-563a-4ba1-b6a9-af48a0379c55",
         "credentials": {
@@ -1592,11 +1405,6 @@
             },
             {
               "node": "Apply Org Labels",
-              "type": "main",
-              "index": 0
-            },
-            {
-              "node": "Has New Label?",
               "type": "main",
               "index": 0
             },
@@ -1677,29 +1485,6 @@
           ]
         ]
       },
-      "Has New Label?": {
-        "main": [
-          [
-            {
-              "node": "Create New Label",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          []
-        ]
-      },
-      "Create New Label": {
-        "main": [
-          [
-            {
-              "node": "Apply New Label",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
       "Archive Email?": {
         "main": [
           [
@@ -1726,9 +1511,9 @@
       }
     },
     "authors": "Nelson Torres",
-    "name": "Version 28a0b7dc",
-    "description": "",
-    "autosaved": true
+    "name": null,
+    "description": null,
+    "autosaved": false
   },
   "tags": []
 }
