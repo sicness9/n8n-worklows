@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-11T13:03:31.190Z",
+  "updatedAt": "2026-05-15T13:48:16.892Z",
   "createdAt": "2026-05-05T22:06:52.817Z",
   "id": "V9nBJmspHOAo5MU5",
   "name": "Morning Brief Push",
@@ -60,7 +60,7 @@
     },
     {
       "parameters": {
-        "jsCode": "var today = new Date();\nvar dateStr = today.toISOString().split('T')[0];\nvar dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];\n\nvar tasks = $input.all().map(function(item) { return item.json; });\nvar asanaData = {\n  tasks_due_today: tasks.filter(function(t) { return t.due_on === dateStr; }).map(function(t) { return t.name; }),\n  overdue: tasks.filter(function(t) { return t.due_on && t.due_on < dateStr; }).map(function(t) { return t.name; }),\n  upcoming: tasks.filter(function(t) { return t.due_on && t.due_on > dateStr; }).slice(0, 10).map(function(t) { return t.name + ' (due: ' + t.due_on + ')'; }),\n  no_due_date: tasks.filter(function(t) { return !t.due_on; }).map(function(t) { return t.name; })\n};\nvar slackData = { unread_dms: [], mentions: [], note: 'Slack data not yet connected' };\nvar gmailData = { action_required: [], unread_count: 0, note: 'Gmail data not yet connected' };\n\nvar systemPrompt = [\n  '# Morning Briefing',\n  '',\n  'Generate a concise morning briefing for Nelson Torres at AdQuadrant.',\n  'Today is ' + dayName + ', ' + dateStr + '.',\n  '',\n  '## Data Sources',\n  '',\n  '### Asana Tasks',\n  JSON.stringify(asanaData),\n  '',\n  '### Slack (last 24h)',\n  JSON.stringify(slackData),\n  '',\n  '### Gmail',\n  JSON.stringify(gmailData),\n  '',\n  '## Output Format',\n  '',\n  '### Needs Action Today',\n  'Ranked by urgency + effort. Include source and brief context.',\n  '',\n  '### On Your Radar',\n  'Due soon, waiting on others, FYI threads worth knowing.',\n  '',\n  '### Inbox Summary',\n  'Slack + email items condensed. Paraphrase, never verbatim.',\n  '',\n  '## Rules',\n  '- Keep under 40 lines total',\n  '- Do not list completed tasks',\n  '- If nothing is urgent, say so',\n  '- Cross-reference Slack/email threads connected to Asana tasks'\n].join('\\n');\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 2048,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Generate the morning briefing for ' + dayName + ' ' + dateStr + '.'\n  }]\n}}];"
+        "jsCode": "var today = new Date();\nvar dateStr = today.toLocaleString(\"en-US\").split('T')[0];\nvar dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];\n\nvar tasks = $input.all().map(function(item) { return item.json; });\nvar asanaData = {\n  tasks_due_today: tasks.filter(function(t) { return t.due_on === dateStr; }).map(function(t) { return t.name; }),\n  overdue: tasks.filter(function(t) { return t.due_on && t.due_on < dateStr; }).map(function(t) { return t.name; }),\n  upcoming: tasks.filter(function(t) { return t.due_on && t.due_on > dateStr; }).slice(0, 10).map(function(t) { return t.name + ' (due: ' + t.due_on + ')'; }),\n  no_due_date: tasks.filter(function(t) { return !t.due_on; }).map(function(t) { return t.name; })\n};\nvar slackData = { unread_dms: [], mentions: [], note: 'Slack data not yet connected' };\nvar gmailData = { action_required: [], unread_count: 0, note: 'Gmail data not yet connected' };\n\nvar systemPrompt = [\n  '# Morning Briefing',\n  '',\n  'Generate a concise morning briefing for Nelson Torres at AdQuadrant.',\n  'Today is ' + dayName + ', ' + dateStr + '.',\n  '',\n  '## Data Sources',\n  '',\n  '### Asana Tasks',\n  JSON.stringify(asanaData),\n  '',\n  '### Slack (last 24h)',\n  JSON.stringify(slackData),\n  '',\n  '### Gmail',\n  JSON.stringify(gmailData),\n  '',\n  '## Output Format',\n  '',\n  '### Needs Action Today',\n  'Ranked by urgency + effort. Include source and brief context.',\n  '',\n  '### On Your Radar',\n  'Due soon, waiting on others, FYI threads worth knowing.',\n  '',\n  '### Inbox Summary',\n  'Slack + email items condensed. Paraphrase, never verbatim.',\n  '',\n  '## Rules',\n  '- Keep under 40 lines total',\n  '- Do not list completed tasks',\n  '- If nothing is urgent, say so',\n  '- Cross-reference Slack/email threads connected to Asana tasks'\n].join('\\n');\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 2048,\n  system: systemPrompt,\n  messages: [{ role: 'user', content:\n    'Generate the morning briefing for ' + dayName + ' ' + dateStr + '.'\n  }]\n}}];"
       },
       "id": "a5fe7aa0-baa9-41e8-ae86-679bfe91fd0e",
       "name": "Build Brief Request",
@@ -226,7 +226,7 @@
     "aiBuilderAssisted": true
   },
   "pinData": {},
-  "versionId": "739f5cbf-d42b-455f-91d1-921f98e171b8",
+  "versionId": "f2af5a1a-ebc3-40b3-b579-11659a6c8d87",
   "activeVersionId": "739f5cbf-d42b-455f-91d1-921f98e171b8",
   "triggerCount": 1,
   "shared": [
