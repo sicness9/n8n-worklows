@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-13T16:33:29.837Z",
+  "updatedAt": "2026-05-18T21:07:44.068Z",
   "createdAt": "2026-05-11T12:08:42.136Z",
   "id": "kBxN2QvrOmOAja3w",
   "name": "Claude Receiver — Health Watchdog",
@@ -76,7 +76,7 @@
     },
     {
       "parameters": {
-        "url": "http://host.docker.internal:8765/health",
+        "url": "http://n8n-adq.nelson-torres.dev:50565/health",
         "options": {
           "response": {
             "response": {
@@ -235,7 +235,7 @@
   },
   "meta": null,
   "pinData": {},
-  "versionId": "53111146-4302-49df-a07c-b18368ca7729",
+  "versionId": "1e8d4998-1074-4730-a687-40c7653b91a8",
   "activeVersionId": "53111146-4302-49df-a07c-b18368ca7729",
   "triggerCount": 1,
   "shared": [
