@@ -209,12 +209,7 @@
       "recurrenceRules": []
     },
     "global": {
-      "alerted": {
-        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260522T170000Z_t15": "2026-05-22T16:45:15.264Z",
-        "calendar_alerted_den3c1k1j90phg497tg2d4b82e_20260522T170000Z_t15": "2026-05-22T16:45:15.264Z",
-        "calendar_alerted_46dldpj8rnpe7c3j8qe5i6eh90_t15": "2026-05-22T17:45:15.250Z",
-        "calendar_alerted_1nk3sn0pa487ptnbd3epc33m40_20260520T183000Z_t15": "2026-05-22T18:45:15.306Z"
-      }
+      "alerted": {}
     }
   },
   "meta": null,
