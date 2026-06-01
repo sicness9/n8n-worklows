@@ -209,11 +209,7 @@
       "recurrenceRules": []
     },
     "global": {
-      "alerted": {
-        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260529T170000Z_t15": "2026-05-29T16:45:15.489Z",
-        "calendar_alerted_38uesikamqd42sm9br2jkbqit2_t15": "2026-05-29T17:45:15.420Z",
-        "calendar_alerted_2hmomnkvl05os0j915is8t4odu_t15": "2026-05-29T18:15:15.322Z"
-      }
+      "alerted": {}
     }
   },
   "meta": null,
