@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-14T21:29:29.343Z",
+  "updatedAt": "2026-06-03T15:29:56.719Z",
   "createdAt": "2026-05-05T22:06:52.265Z",
   "id": "QlG1fDHb6qpVX4xa",
   "name": "Email Intelligence Engine",
@@ -19,7 +19,7 @@
         },
         "simple": false,
         "filters": {
-          "q": "is:unread -label:iris-reviewed"
+          "q": "(is:unread OR from:gemini-notes@google.com OR from:fireflies.ai) -label:iris-reviewed"
         },
         "options": {}
       },
@@ -749,17 +749,17 @@
   "staticData": {
     "node:Gmail Trigger": {
       "Gmail Trigger": {
-        "lastTimeChecked": 1780449098,
+        "lastTimeChecked": 1780544612,
         "possibleDuplicates": [
-          "19e8b094243cc050"
+          "19e90bab53a1a980"
         ]
       }
     }
   },
   "meta": null,
   "pinData": {},
-  "versionId": "e929db53-0a16-4e5a-97ad-b62b44b2d508",
-  "activeVersionId": "e929db53-0a16-4e5a-97ad-b62b44b2d508",
+  "versionId": "04e80e38-6a33-40cc-8b67-2a8a98c5dbb2",
+  "activeVersionId": "04e80e38-6a33-40cc-8b67-2a8a98c5dbb2",
   "triggerCount": 1,
   "shared": [
     {
@@ -771,9 +771,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-05-14T21:29:29.344Z",
-    "createdAt": "2026-05-14T21:29:29.344Z",
-    "versionId": "e929db53-0a16-4e5a-97ad-b62b44b2d508",
+    "updatedAt": "2026-06-03T15:29:56.720Z",
+    "createdAt": "2026-06-03T15:29:56.720Z",
+    "versionId": "04e80e38-6a33-40cc-8b67-2a8a98c5dbb2",
     "workflowId": "QlG1fDHb6qpVX4xa",
     "nodes": [
       {
@@ -789,7 +789,7 @@
           },
           "simple": false,
           "filters": {
-            "q": "is:unread -label:iris-reviewed"
+            "q": "(is:unread OR from:gemini-notes@google.com OR from:fireflies.ai) -label:iris-reviewed"
           },
           "options": {}
         },
