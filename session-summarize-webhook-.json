@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-12T22:45:50.520Z",
+  "updatedAt": "2026-06-04T14:49:47.377Z",
   "createdAt": "2026-05-12T15:30:28.646Z",
   "id": "dvdTW7uZDki5EfnU",
   "name": "Session Summarize Webhook",
@@ -218,7 +218,7 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": true
   },
   "staticData": null,
   "meta": null,
