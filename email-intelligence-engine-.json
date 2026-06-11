@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-03T15:29:56.719Z",
+  "updatedAt": "2026-06-04T14:50:00.620Z",
   "createdAt": "2026-05-05T22:06:52.265Z",
   "id": "QlG1fDHb6qpVX4xa",
   "name": "Email Intelligence Engine",
@@ -742,16 +742,16 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false,
+    "availableInMCP": true,
     "binaryMode": "separate",
     "timezone": "America/New_York"
   },
   "staticData": {
     "node:Gmail Trigger": {
       "Gmail Trigger": {
-        "lastTimeChecked": 1780544612,
+        "lastTimeChecked": 1781143515,
         "possibleDuplicates": [
-          "19e90bab53a1a980"
+          "19eb46d36378e0c2"
         ]
       }
     }
