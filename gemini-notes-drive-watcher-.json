@@ -172,7 +172,12 @@
   },
   "staticData": {
     "node:Watch Gemini Notes Folder": {
-      "lastTimeChecked": "2026-06-03T15:28:38Z"
+      "lastTimeChecked": "2026-06-10T17:02:43Z"
+    },
+    "global": {
+      "processedIds": [
+        "124c1viRl0jXotRTiE4Q2gN1VfUrJDAqsTDD1xTx8UmM"
+      ]
     }
   },
   "meta": {
