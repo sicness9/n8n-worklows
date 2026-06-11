@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-18T21:07:44.068Z",
+  "updatedAt": "2026-06-04T14:49:57.361Z",
   "createdAt": "2026-05-11T12:08:42.136Z",
   "id": "kBxN2QvrOmOAja3w",
   "name": "Claude Receiver — Health Watchdog",
@@ -225,7 +225,7 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false,
+    "availableInMCP": true,
     "binaryMode": "separate"
   },
   "staticData": {
