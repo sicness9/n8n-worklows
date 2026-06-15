@@ -209,19 +209,7 @@
       "recurrenceRules": []
     },
     "global": {
-      "alerted": {
-        "calendar_alerted_k1equ7338b1jvm29esublct854_20260612T130000Z_t15": "2026-06-12T12:45:23.243Z",
-        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260612T150000Z_t15": "2026-06-12T14:45:23.255Z",
-        "calendar_alerted_5luthord5jhcobcji6mvb7uqme_t15": "2026-06-12T15:45:23.300Z",
-        "calendar_alerted_den3c1k1j90phg497tg2d4b82e_20260612T170000Z_t15": "2026-06-12T16:15:23.267Z",
-        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260612T170000Z_t15": "2026-06-12T16:45:23.215Z",
-        "calendar_alerted_2jhq87anmqna5tpfarmh6djbcc_20260612T180000Z_t15": "2026-06-12T17:45:23.282Z",
-        "calendar_alerted_2v7kaf95ocnkglc9d834mlss26_t15": "2026-06-12T18:45:23.244Z",
-        "calendar_alerted_7tgu71p2d8tge850o01j20nflb_t15": "2026-06-12T18:45:23.245Z",
-        "calendar_alerted_3c7hdg8soe4tqjbum7m1flmebo_20260612T200000Z_t15": "2026-06-12T19:45:23.351Z",
-        "calendar_alerted_51dqvm7t2u3mdnkh3aanm571fr_t15": "2026-06-12T20:45:23.234Z",
-        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260612T220000Z_t15": "2026-06-12T21:45:23.253Z"
-      }
+      "alerted": {}
     }
   },
   "meta": null,
