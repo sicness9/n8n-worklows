@@ -210,16 +210,18 @@
     },
     "global": {
       "alerted": {
-        "calendar_alerted_k1equ7338b1jvm29esublct854_20260616T130000Z_t15": "2026-06-16T12:45:23.276Z",
-        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260616T150000Z_t15": "2026-06-16T14:45:23.228Z",
-        "calendar_alerted_2jl560po0u80ttepln0uu0mhka_t15": "2026-06-16T16:15:23.268Z",
-        "calendar_alerted_518im6am68n51odrrita05i7c3_20260616T163000Z_t15": "2026-06-16T16:15:23.268Z",
-        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260616T170000Z_t15": "2026-06-16T16:45:23.274Z",
-        "calendar_alerted_2jhq87anmqna5tpfarmh6djbcc_20260616T180000Z_t15": "2026-06-16T17:45:23.238Z",
-        "calendar_alerted_3c7hdg8soe4tqjbum7m1flmebo_20260616T200000Z_t15": "2026-06-16T19:45:23.212Z",
-        "calendar_alerted_4ekdf7kcbiqrnh8eeldj11bir4_t15": "2026-06-16T19:45:23.212Z",
-        "calendar_alerted_267i5jpq7h136vmg72vjm8utp9_t15": "2026-06-16T20:45:23.273Z",
-        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260616T220000Z_t15": "2026-06-16T21:45:23.235Z"
+        "calendar_alerted_k1equ7338b1jvm29esublct854_20260617T130000Z_t15": "2026-06-17T12:45:23.435Z",
+        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260617T150000Z_t15": "2026-06-17T14:45:23.512Z",
+        "calendar_alerted_518im6am68n51odrrita05i7c3_20260617T163000Z_t15": "2026-06-17T16:15:23.301Z",
+        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260617T170000Z_t15": "2026-06-17T16:45:23.758Z",
+        "calendar_alerted_2jhq87anmqna5tpfarmh6djbcc_20260617T180000Z_t15": "2026-06-17T17:45:23.410Z",
+        "calendar_alerted_1nk3sn0pa487ptnbd3epc33m40_20260617T183000Z_t15": "2026-06-17T18:45:23.659Z",
+        "calendar_alerted_720ig86iutkrmcstgrghvcu6oj_t15": "2026-06-17T19:15:23.366Z",
+        "calendar_alerted_3c7hdg8soe4tqjbum7m1flmebo_20260617T200000Z_t15": "2026-06-17T19:45:23.566Z",
+        "calendar_alerted_4vv81mti2j609te88k6uhu3a7j_t15": "2026-06-17T19:45:23.566Z",
+        "calendar_alerted_3vciegahh2ancqhuns7ocughqc_t15": "2026-06-17T20:15:23.244Z",
+        "calendar_alerted_44o70p1dmcamg4nakjp30hqnus_t15": "2026-06-17T20:45:23.397Z",
+        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260617T220000Z_t15": "2026-06-17T21:45:23.451Z"
       }
     }
   },
