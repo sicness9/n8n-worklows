@@ -210,18 +210,14 @@
     },
     "global": {
       "alerted": {
-        "calendar_alerted_k1equ7338b1jvm29esublct854_20260617T130000Z_t15": "2026-06-17T12:45:23.435Z",
-        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260617T150000Z_t15": "2026-06-17T14:45:23.512Z",
-        "calendar_alerted_518im6am68n51odrrita05i7c3_20260617T163000Z_t15": "2026-06-17T16:15:23.301Z",
-        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260617T170000Z_t15": "2026-06-17T16:45:23.758Z",
-        "calendar_alerted_2jhq87anmqna5tpfarmh6djbcc_20260617T180000Z_t15": "2026-06-17T17:45:23.410Z",
-        "calendar_alerted_1nk3sn0pa487ptnbd3epc33m40_20260617T183000Z_t15": "2026-06-17T18:45:23.659Z",
-        "calendar_alerted_720ig86iutkrmcstgrghvcu6oj_t15": "2026-06-17T19:15:23.366Z",
-        "calendar_alerted_3c7hdg8soe4tqjbum7m1flmebo_20260617T200000Z_t15": "2026-06-17T19:45:23.566Z",
-        "calendar_alerted_4vv81mti2j609te88k6uhu3a7j_t15": "2026-06-17T19:45:23.566Z",
-        "calendar_alerted_3vciegahh2ancqhuns7ocughqc_t15": "2026-06-17T20:15:23.244Z",
-        "calendar_alerted_44o70p1dmcamg4nakjp30hqnus_t15": "2026-06-17T20:45:23.397Z",
-        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260617T220000Z_t15": "2026-06-17T21:45:23.451Z"
+        "calendar_alerted_k1equ7338b1jvm29esublct854_20260618T130000Z_t15": "2026-06-18T12:45:23.433Z",
+        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260618T150000Z_t15": "2026-06-18T14:45:23.534Z",
+        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260618T170000Z_t15": "2026-06-18T16:45:23.465Z",
+        "calendar_alerted_289mi8kccv7mhve4b0575ktku4_t15": "2026-06-18T18:45:23.932Z",
+        "calendar_alerted_0q5to13sn5tg45jhfkie95qtgo_20260618T193000Z_t15": "2026-06-18T19:15:23.350Z",
+        "calendar_alerted_1a2o94rraercur89djeq6vte4f_t15": "2026-06-18T19:45:24.273Z",
+        "calendar_alerted_hqmc7jl8g8gsl1jos4h375h73k_20260618T213000Z_t15": "2026-06-18T21:15:23.266Z",
+        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260618T220000Z_t15": "2026-06-18T21:45:23.478Z"
       }
     }
   },
