@@ -210,14 +210,12 @@
     },
     "global": {
       "alerted": {
-        "calendar_alerted_k1equ7338b1jvm29esublct854_20260618T130000Z_t15": "2026-06-18T12:45:23.433Z",
-        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260618T150000Z_t15": "2026-06-18T14:45:23.534Z",
-        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260618T170000Z_t15": "2026-06-18T16:45:23.465Z",
-        "calendar_alerted_289mi8kccv7mhve4b0575ktku4_t15": "2026-06-18T18:45:23.932Z",
-        "calendar_alerted_0q5to13sn5tg45jhfkie95qtgo_20260618T193000Z_t15": "2026-06-18T19:15:23.350Z",
-        "calendar_alerted_1a2o94rraercur89djeq6vte4f_t15": "2026-06-18T19:45:24.273Z",
-        "calendar_alerted_hqmc7jl8g8gsl1jos4h375h73k_20260618T213000Z_t15": "2026-06-18T21:15:23.266Z",
-        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260618T220000Z_t15": "2026-06-18T21:45:23.478Z"
+        "calendar_alerted_k1equ7338b1jvm29esublct854_20260619T130000Z_t15": "2026-06-19T12:45:23.609Z",
+        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260619T150000Z_t15": "2026-06-19T14:45:23.583Z",
+        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260619T170000Z_t15": "2026-06-19T16:45:23.514Z",
+        "calendar_alerted_2jhq87anmqna5tpfarmh6djbcc_20260619T180000Z_t15": "2026-06-19T17:45:23.564Z",
+        "calendar_alerted_3c7hdg8soe4tqjbum7m1flmebo_20260619T200000Z_t15": "2026-06-19T19:45:23.598Z",
+        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260619T220000Z_t15": "2026-06-19T21:45:23.493Z"
       }
     }
   },
