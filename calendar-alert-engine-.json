@@ -210,14 +210,13 @@
     },
     "global": {
       "alerted": {
-        "calendar_alerted_k1equ7338b1jvm29esublct854_20260707T130000Z_t15": "2026-07-07T12:45:23.274Z",
-        "calendar_alerted_03gbleni151hd8nk26feda0dqh_t15": "2026-07-07T14:45:23.276Z",
-        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260707T150000Z_t15": "2026-07-07T14:45:23.277Z",
-        "calendar_alerted_518im6am68n51odrrita05i7c3_20260707T163000Z_t15": "2026-07-07T16:15:23.340Z",
-        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260707T170000Z_t15": "2026-07-07T16:45:23.251Z",
-        "calendar_alerted_2jhq87anmqna5tpfarmh6djbcc_20260707T180000Z_t15": "2026-07-07T17:45:23.315Z",
-        "calendar_alerted_3c7hdg8soe4tqjbum7m1flmebo_20260707T200000Z_t15": "2026-07-07T19:45:23.235Z",
-        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260707T220000Z_t15": "2026-07-07T21:45:23.221Z"
+        "calendar_alerted_k1equ7338b1jvm29esublct854_20260708T130000Z_t15": "2026-07-08T12:45:23.251Z",
+        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260708T150000Z_t15": "2026-07-08T14:45:23.210Z",
+        "calendar_alerted_518im6am68n51odrrita05i7c3_20260708T163000Z_t15": "2026-07-08T16:15:23.266Z",
+        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260708T170000Z_t15": "2026-07-08T16:45:23.275Z",
+        "calendar_alerted_2jhq87anmqna5tpfarmh6djbcc_20260708T180000Z_t15": "2026-07-08T17:45:23.212Z",
+        "calendar_alerted_3c7hdg8soe4tqjbum7m1flmebo_20260708T200000Z_t15": "2026-07-08T19:45:23.206Z",
+        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260708T220000Z_t15": "2026-07-08T21:45:23.626Z"
       }
     }
   },
