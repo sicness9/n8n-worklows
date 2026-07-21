@@ -209,7 +209,16 @@
       "recurrenceRules": []
     },
     "global": {
-      "alerted": {}
+      "alerted": {
+        "calendar_alerted_k1equ7338b1jvm29esublct854_20260720T130000Z_t15": "2026-07-20T12:45:23.240Z",
+        "calendar_alerted_63h87e6etsqe672smpue4jgtc4_20260720T150000Z_t15": "2026-07-20T14:45:23.255Z",
+        "calendar_alerted_518im6am68n51odrrita05i7c3_20260720T163000Z_t15": "2026-07-20T16:15:23.279Z",
+        "calendar_alerted_321qn9svva7cfap4ulhpqb82b6_20260720T170000Z_t15": "2026-07-20T16:45:23.352Z",
+        "calendar_alerted_97eo7qrdr8ucqfgf38llc20uoi_20260720T170000Z_t15": "2026-07-20T16:45:23.353Z",
+        "calendar_alerted_2jhq87anmqna5tpfarmh6djbcc_20260720T180000Z_t15": "2026-07-20T17:45:23.288Z",
+        "calendar_alerted_3c7hdg8soe4tqjbum7m1flmebo_20260720T200000Z_t15": "2026-07-20T19:45:23.215Z",
+        "calendar_alerted_gb0iovmv3dghuumjljanrmu0s0_20260720T220000Z_t15": "2026-07-20T21:45:23.357Z"
+      }
     }
   },
   "meta": null,
